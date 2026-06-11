@@ -1,0 +1,731 @@
+<div class="admin-page">
+  <fieldset class="section-picker">
+    <legend>Maintenance for:</legend>
+    @for (opt of options; track opt.id) {
+      <label>
+        <input
+          type="radio"
+          name="section"
+          [value]="opt.id"
+          [checked]="section() === opt.id"
+          (change)="setSection(opt.id)"
+        />
+        {{ opt.label }}
+      </label>
+    }
+  </fieldset>
+
+  <!-- ============ Option 1: Outsourcing Location ============ -->
+  @if (section() === 'option1') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="right">
+          <ifx-button variant="primary" theme="default" size="s" (click)="openAddSbol()">Add</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="openUpdateSbol()">Update</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="removeSbol()">Remove</ifx-button>
+        </div>
+      </div>
+      <table class="mytable">
+        <thead>
+          <tr>
+            <th style="width:5%"><input type="checkbox" [checked]="allChecked(sbol(), sbolChecked, 'mapid')" (change)="toggleAll(sbol(), sbolChecked, $any($event.target).checked, 'mapid')" /></th>
+            <th>Outsourcing Location</th>
+            <th>RPT Location</th>
+            <th>Included in TS</th>
+            <th>Included in RTU</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of sbol(); track row.mapid) {
+            <tr>
+              <td><input type="checkbox" [checked]="sbolChecked.has(row.mapid)" (change)="toggleOne(sbolChecked, row.mapid, $any($event.target).checked)" /></td>
+              <td>{{ row.ethloc }}</td>
+              <td>{{ row.rptloc }}</td>
+              <td>{{ row.tstrue }}</td>
+              <td>{{ row.rtutrue }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No outsourcing location mappings.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ============ Option 2: SB <-> Client Corridor ============ -->
+  @if (section() === 'option2') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="field">
+          <label>SB Name</label>
+          <select [ngModel]="sb2FilterName()" (ngModelChange)="sb2FilterName.set($event)">
+            <option value="">All</option>
+            @for (name of sbNames(); track name) {
+              <option [value]="name">{{ name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Client Corridor</label>
+          <select [ngModel]="sb2FilterCc()" (ngModelChange)="sb2FilterCc.set($event)">
+            <option value="">All</option>
+            @for (name of ccNames(); track name) {
+              <option [value]="name">{{ name }}</option>
+            }
+          </select>
+        </div>
+        <div class="right">
+          <ifx-button variant="primary" theme="default" size="s" (click)="openAddSb()">Add</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="removeSb()">Remove</ifx-button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="mytable">
+          <thead>
+            <tr>
+              <th style="width:5%"><input type="checkbox" [checked]="allChecked(filteredSb(), sbChecked, 'sbmappingid')" (change)="toggleAll(filteredSb(), sbChecked, $any($event.target).checked, 'sbmappingid')" /></th>
+              <th>Service Bundle Name</th>
+              <th>Client Corridor Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredSb(); track row.sbmappingid) {
+              <tr>
+                <td><input type="checkbox" [checked]="sbChecked.has(row.sbmappingid)" (change)="toggleOne(sbChecked, row.sbmappingid, $any($event.target).checked)" /></td>
+                <td>{{ row.sbname }}</td>
+                <td>{{ row.ccname }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="empty">No mappings.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 3: SB Owner -> SB ============ -->
+  @if (section() === 'option3') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="field">
+          <label>SB Owner</label>
+          <select [ngModel]="sb3FilterOwner()" (ngModelChange)="sb3FilterOwner.set($event)">
+            <option value="">All</option>
+            @for (item of sbOwnerNames(); track item.value) {
+              <option [value]="item.value">{{ item.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>SB Name</label>
+          <select [ngModel]="sb3FilterName()" (ngModelChange)="sb3FilterName.set($event)">
+            <option value="">All</option>
+            @for (item of sbNamesByOwner(); track item.value) {
+              <option [value]="item.text">{{ item.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="right">
+          <ifx-button variant="primary" theme="default" size="s" (click)="openAddSbOwner()">Add</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="openUpdateOwner()">Update</ifx-button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="mytable">
+          <thead>
+            <tr>
+              <th style="width:5%"><input type="checkbox" [checked]="allChecked(filteredSbOwners(), sbOwnerChecked, 'sb')" (change)="toggleAll(filteredSbOwners(), sbOwnerChecked, $any($event.target).checked, 'sb')" /></th>
+              <th>Service Bundle Owner</th>
+              <th>Service Bundle Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredSbOwners(); track row.sb) {
+              <tr>
+                <td><input type="checkbox" [checked]="sbOwnerChecked.has(row.sb)" (change)="toggleOne(sbOwnerChecked, row.sb, $any($event.target).checked)" /></td>
+                <td>{{ row.persname }}</td>
+                <td>{{ row.sbname }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="empty">No service bundle owners.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 4: SB Path ============ -->
+  @if (section() === 'option4') {
+    <div class="section">
+      <form class="form-stack" (ngSubmit)="saveSbPath(); $event.preventDefault()">
+        <p><strong>Update Service Bundle Path</strong></p>
+        <div class="field">
+          <label>Service Bundle</label>
+          <select [(ngModel)]="pathSb" name="pathSb" (ngModelChange)="loadSbPath($event)">
+            <option value="">Select Service Bundle</option>
+            @for (item of newsbRef(); track item.value) {
+              <option [value]="item.value">{{ item.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Local Path</label>
+          <textarea [(ngModel)]="pathLocal" name="pathLocal" [disabled]="!pathSb"></textarea>
+        </div>
+        <div class="field">
+          <label>iShare Path</label>
+          <textarea [(ngModel)]="pathIShare" name="pathIShare" [disabled]="!pathSb"></textarea>
+        </div>
+        <div>
+          <ifx-button type="submit" variant="primary" theme="default" size="s" [disabled]="!pathSb">Save</ifx-button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- ============ Option 5: Email Templates ============ -->
+  @if (section() === 'option5') {
+    <div class="section">
+      <form class="form-stack" (ngSubmit)="saveEmailTemplate(); $event.preventDefault()">
+        <p><strong>Update Email Template</strong></p>
+        <div class="field">
+          <label>Horizon</label>
+          <select [(ngModel)]="emailHorizon" name="emailHorizon" (ngModelChange)="loadEmailTemplate($event)">
+            <option value="">Please select a horizon</option>
+            @for (item of horizonRef(); track item.value) {
+              <option [value]="item.value">{{ item.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Published Email Template</label>
+          <textarea [(ngModel)]="emailFirst" name="emailFirst" [disabled]="!emailHorizon"></textarea>
+        </div>
+        <div class="field">
+          <label>Reminder Mail Template</label>
+          <textarea [(ngModel)]="emailReminder" name="emailReminder" [disabled]="!emailHorizon"></textarea>
+        </div>
+        <div class="field">
+          <label>Release Mail Template</label>
+          <textarea [(ngModel)]="emailRelease" name="emailRelease" [disabled]="!emailHorizon"></textarea>
+        </div>
+        <div>
+          <ifx-button type="submit" variant="primary" theme="default" size="s" [disabled]="!emailHorizon">Save</ifx-button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- ============ Option 6: Cost Mapping ============ -->
+  @if (section() === 'option6') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="field">
+          <label>Location</label>
+          <select [ngModel]="costFilterLab()" (ngModelChange)="onCostLocationChange($event)">
+            <option value="">All</option>
+            @for (lab of costLabels(); track lab) {
+              <option [value]="lab">{{ lab }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>SB Name</label>
+          <select [ngModel]="costFilterSb()" (ngModelChange)="costFilterSb.set($event)">
+            <option value="">All</option>
+            @for (sb of filteredCostSbNames(); track sb) {
+              <option [value]="sb">{{ decodeHtml(sb) }}</option>
+            }
+          </select>
+        </div>
+        <div class="right">
+          <ifx-button variant="primary" theme="default" size="s" (click)="openAddCost()">Add</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="openUpdateCost()">Update</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="askDeleteCost()">Remove</ifx-button>
+          <ifx-button variant="secondary" theme="default" size="s" (click)="exportCost()">Export</ifx-button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="mytable">
+          <thead>
+            <tr>
+              <th style="width:5%"><input type="checkbox" [checked]="allChecked(filteredCost(), costChecked, 'costmappingid')" (change)="toggleAll(filteredCost(), costChecked, $any($event.target).checked, 'costmappingid')" /></th>
+              <th>RPT Cost Center</th>
+              <th>RPT Lab</th>
+              <th>Receiver WBS</th>
+              <th>SB Affected</th>
+              <th>SB Cost %</th>
+              <th>Client Corridor</th>
+              <th>Cost Split %</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredCost(); track row.costmappingid) {
+              <tr>
+                <td><input type="checkbox" [checked]="costChecked.has(row.costmappingid)" (change)="toggleOne(costChecked, row.costmappingid, $any($event.target).checked)" /></td>
+                <td>{{ row.costcenter }}</td>
+                <td>{{ row.rptlab }}</td>
+                <td>{{ row.receiverwbs }}</td>
+                <td>{{ decodeHtml(row.sbaffected) }}</td>
+                <td>{{ row.percentage }}</td>
+                <td>{{ row.ccaffected }}</td>
+                <td>{{ row.ccpercentage !== null ? row.ccpercentage : '' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8" class="empty">No cost mappings.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 7: ENG OVH ============ -->
+  @if (section() === 'option7') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="field">
+          <label>Location</label>
+          <select [ngModel]="engovhFilterLoc()" (ngModelChange)="onEngovhLocChange($event)">
+            <option value="">All</option>
+            @for (loc of engovhLocOptions(); track loc.value) {
+              <option [value]="loc.text">{{ loc.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Client Corridor</label>
+          <select [ngModel]="engovhFilterCc()" (ngModelChange)="engovhFilterCc.set($event)">
+            <option value="">All</option>
+            @for (cc of filteredEngovhCcOptions(); track cc.value) {
+              <option [value]="cc.text">{{ cc.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="right">
+          <ifx-button variant="primary" theme="default" size="s" (click)="openAddEngovh()">Add</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="openUpdateEngovh()">Update</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="removeEngovh()">Remove</ifx-button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="mytable">
+          <thead>
+            <tr>
+              <th style="width:5%"><input type="checkbox" [checked]="allChecked(filteredEngovh(), engovhChecked, 'engovhid')" (change)="toggleAll(filteredEngovh(), engovhChecked, $any($event.target).checked, 'engovhid')" /></th>
+              <th>Location</th>
+              <th>Client Corridor</th>
+              <th>ENG OVH Value</th>
+              <th>FY</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredEngovh(); track row.engovhid) {
+              <tr>
+                <td><input type="checkbox" [checked]="engovhChecked.has(row.engovhid)" (change)="toggleOne(engovhChecked, row.engovhid, $any($event.target).checked)" /></td>
+                <td>{{ row.loc }}</td>
+                <td>{{ row.cc }}</td>
+                <td>{{ row.val }}</td>
+                <td>{{ row.fy }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty">No ENG OVH records.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 8: RTU/TS & COST/RTU (read-only) ============ -->
+  @if (section() === 'option8') {
+    <div class="section">
+      <div class="toolbar">
+        <div class="field">
+          <label>FY</label>
+          <select [ngModel]="sballmapFilterFy()" (ngModelChange)="onSballmapFyChange($event)">
+            <option value="">All</option>
+            @for (fy of sballmapFyOptions(); track fy) {
+              <option [value]="fy">{{ fy }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <select [ngModel]="sballmapFilterLoc()" (ngModelChange)="sballmapFilterLoc.set($event)">
+            <option value="">All</option>
+            @for (loc of sballmapLocOptions(); track loc) {
+              <option [value]="loc">{{ loc }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="mytable">
+          <thead>
+            <tr>
+              <th>FY</th>
+              <th>Location</th>
+              <th>SB</th>
+              <th>Original RTU/TS</th>
+              <th>Edited RTU/TS</th>
+              <th>Original Cost/RTU</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredSballmap(); track $index) {
+              <tr>
+                <td>{{ row.fy }}</td>
+                <td>{{ row.loc }}</td>
+                <td>{{ row.sb }}</td>
+                <td>{{ row.rtuts_old }}</td>
+                <td>{{ row.rtuts }}</td>
+                <td>{{ row.costrtu_old }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty">No data.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 9: ORM Summary ============ -->
+  @if (section() === 'option9') {
+    <div class="section">
+      <h5>ORM Summary</h5>
+      <div class="form-stack">
+        <div class="field">
+          <label>Current Horizon</label>
+          <input type="text" [value]="ormHorizon" readonly style="max-width: 240px; background-color: #e9ecef; cursor: not-allowed;" />
+        </div>
+        <div class="field">
+          <label>Statement / Comment</label>
+          <textarea [(ngModel)]="ormStatement" rows="6"
+                    placeholder="Enter your statement or comment here..."></textarea>
+        </div>
+        <div style="text-align:right; display:flex; gap:0.4rem; justify-content:flex-end;">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="copyPreviousOrm()">Copy Previous</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveOrm()">Save</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="clearOrm()">Clear</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============ Option 10: Due Date ============ -->
+  @if (section() === 'option10') {
+    <div class="section">
+      <h5>Service Bundle Publishing Due Date</h5>
+      <div class="form-stack">
+        <div class="field">
+          <label>Horizon</label>
+          <select [(ngModel)]="dueDateHorizon" (ngModelChange)="loadDueDate($event)">
+            <option value="">Select horizon</option>
+            @for (item of horizonRef(); track item.value) {
+              <option [value]="item.value">{{ item.text }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Due Date</label>
+          <input type="date" [(ngModel)]="dueDateValue" [disabled]="!dueDateHorizon" style="max-width: 240px;" />
+        </div>
+        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveDueDate()" [disabled]="!dueDateHorizon">Save</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="clearDueDate()" [disabled]="!dueDateHorizon">Clear</ifx-button>
+        </div>
+        @if (dueDateStatus(); as st) {
+          <div class="alert" [class.alert-success]="st.type === 'success'" [class.alert-danger]="st.type === 'danger'">{{ st.message }}</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ============ Modals ============ -->
+
+  @if (modal() === 'addSbol') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Add New Outsourcing Location Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Outsourcing Location</label>
+            <select [(ngModel)]="addSbolEth">
+              <option value="">Select Outsourcing Location</option>
+              @for (it of ethlocRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>RPT Location</label>
+            <select [(ngModel)]="addSbolRpt">
+              <option value="">Select RPT Location</option>
+              @for (it of rptlocRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Included in TS</label>
+            <select [(ngModel)]="addSbolTs"><option value=""></option><option value="Y">Y</option><option value="N">N</option></select>
+          </div>
+          <div class="field"><label>Included in RTU</label>
+            <select [(ngModel)]="addSbolRtu"><option value=""></option><option value="Y">Y</option><option value="N">N</option></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveAddSbol()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'updateSbol') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Update Outsourcing Location Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Outsourcing Location</label>
+            <input [value]="updSbolRow?.ethloc" disabled />
+          </div>
+          <div class="field"><label>RPT Location</label>
+            <input [value]="updSbolRow?.rptloc" disabled />
+          </div>
+          <div class="field"><label>Included in TS</label>
+            <select [(ngModel)]="updSbolTs"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+          </div>
+          <div class="field"><label>Included in RTU</label>
+            <select [(ngModel)]="updSbolRtu"><option value="">Select</option><option value="Y">Y</option><option value="N">N</option></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveUpdateSbol()">Update</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'addSb') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Add New Client Corridor Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Service Bundle</label>
+            <select [(ngModel)]="addSbSb">
+              <option value="">Select SB</option>
+              @for (it of newsbRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Client Corridor</label>
+            <select [(ngModel)]="addSbCc">
+              <option value="">Select CC</option>
+              @for (it of newccRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveAddSb()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'addSbOwner') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Add New Service Bundle Owner to SB Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Service Bundle Owner</label>
+            <select [(ngModel)]="addOwnerPersId" (ngModelChange)="addOwnerSbName = ''">
+              <option value="">Select Owner</option>
+              @for (p of sbOwnerNames(); track p.value) { <option [value]="p.value">{{ p.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Service Bundle Name</label>
+            <input type="text" [(ngModel)]="addOwnerSbName" placeholder="Enter Service Bundle Name" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveAddSbOwner()">Add</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'updateOwner') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Update Owner</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Select new owner</label>
+            <select [(ngModel)]="updOwnerPersId">
+              <option value="">Select Owner</option>
+              @for (p of sbOwnerNames(); track p.value) { <option [value]="p.value">{{ p.text }}</option> }
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveUpdateOwner()">Update</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'addCost') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Add New Cost Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Cost Center</label><input [(ngModel)]="costCc" /></div>
+          <div class="field"><label>RPT Lab</label>
+            <select [(ngModel)]="costLab">
+              <option value="">Select RPT Location</option>
+              @for (it of rptlocRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Receiver WBS</label><input [(ngModel)]="costWbs" /></div>
+          <div class="field"><label>Service Bundle</label>
+            <select [(ngModel)]="costSb">
+              <option value="">Select Service Bundle</option>
+              @for (it of newsbRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>SB Cost Percentage</label><input type="number" min="0" max="1" step="0.01" [(ngModel)]="costPct" /></div>
+          <div class="field"><label>Client Corridor</label>
+            <select [(ngModel)]="costClientCc">
+              <option value="">Select CC</option>
+              @for (it of newccRef(); track it.value) { <option [value]="it.value">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Cost Split Percentage</label><input type="number" min="0" max="1" step="0.01" [(ngModel)]="costCcPct" /></div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveAddCost()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'updateCost') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Update Cost Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Cost Center</label><input [(ngModel)]="costCc" disabled /></div>
+          <div class="field"><label>RPT Lab</label><input [(ngModel)]="costLab" disabled /></div>
+          <div class="field"><label>Receiver WBS</label><input [(ngModel)]="costWbs" disabled /></div>
+          <div class="field"><label>SB Affected</label><input [(ngModel)]="costSb" disabled /></div>
+          <div class="field"><label>SB Cost Percentage</label><input type="number" min="0" max="1" step="0.01" [(ngModel)]="costPct" /></div>
+          <div class="field"><label>Client Corridor Affected</label>
+            @if (updCostHadCc) {
+              <input [(ngModel)]="costClientCc" />
+            } @else {
+              <select [(ngModel)]="costClientCc">
+                <option value="">Select Client Corridor</option>
+                @for (it of newccRef(); track it.value) { <option [value]="it.text">{{ it.text }}</option> }
+              </select>
+            }
+          </div>
+          <div class="field"><label>Cost Split Percentage</label><input type="number" min="0" max="1" step="0.01" [(ngModel)]="costCcPct" /></div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveUpdateCost()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'confirmDeleteCost') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Delete Cost Mapping</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body"><p>Are you sure you want to delete this cost mapping?</p></div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Cancel</ifx-button>
+          <ifx-button variant="primary" theme="danger" size="s" (click)="confirmDeleteCost()">Delete</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'addEngovh') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Add New ENG OVH</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Location</label>
+            <select [(ngModel)]="engLoc">
+              <option value="">Select Location</option>
+              @for (it of rptlocRef(); track it.value) { <option [value]="it.text">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Client Corridor</label>
+            <select [(ngModel)]="engCc">
+              <option value="">Select Client Corridor</option>
+              @for (it of newccRef(); track it.value) { <option [value]="it.text">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>ENG OVH Value</label><input type="number" min="1" max="10" [(ngModel)]="engVal" /></div>
+          <div class="field"><label>FY</label><input [(ngModel)]="engFy" placeholder="e.g., 24/25" maxlength="5" /></div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveAddEngovh()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'updateEngovh') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><span>Update ENG OVH</span>
+          <button class="close" (click)="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field"><label>Location</label>
+            <select [(ngModel)]="engLoc">
+              <option value="">Select Location</option>
+              @for (it of rptlocRef(); track it.value) { <option [value]="it.text">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>Client Corridor</label>
+            <select [(ngModel)]="engCc">
+              <option value="">Select Client Corridor</option>
+              @for (it of newccRef(); track it.value) { <option [value]="it.text">{{ it.text }}</option> }
+            </select>
+          </div>
+          <div class="field"><label>ENG OVH Value</label><input type="number" min="1" max="10" [(ngModel)]="engVal" /></div>
+          <div class="field"><label>FY</label><input [(ngModel)]="engFy" placeholder="e.g., 24/25" maxlength="5" /></div>
+        </div>
+        <div class="modal-footer">
+          <ifx-button variant="secondary" theme="default" size="s" (click)="closeModal()">Close</ifx-button>
+          <ifx-button variant="primary" theme="default" size="s" (click)="saveUpdateEngovh()">Save</ifx-button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

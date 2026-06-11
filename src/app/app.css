@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  font-family: "Source Sans Pro", "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100dvh;
+  background: #f6f7fb;
+  color: #1f2937;
+}
+
+/* ifx-navbar is fixed, so push the page content below it. */
+.app-main {
+  padding: 1.5rem;
+  padding-top: calc(64px + 1.5rem);
+}
