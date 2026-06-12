@@ -1,0 +1,3 @@
+NPM_RUN=build
+NODE_ENV=production
+PORT=8080
