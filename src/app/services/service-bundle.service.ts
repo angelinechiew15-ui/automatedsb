@@ -32,10 +32,12 @@ export interface ChartPoint {
 
 export interface ServiceBundleCharts {
   success: boolean;
-  demand: ChartPoint[];
-  rtu: ChartPoint[];
-  testStarts: ChartPoint[];
-  cost: ChartPoint[];
+  tsDemand: ChartPoint[];
+  tsActual: ChartPoint[];
+  rtuDemand: ChartPoint[];
+  rtuActual: ChartPoint[];
+  costDemand: ChartPoint[];
+  costActual: ChartPoint[];
   pareto: ChartPoint[];
 }
 

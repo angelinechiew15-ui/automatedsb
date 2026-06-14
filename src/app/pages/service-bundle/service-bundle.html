@@ -61,21 +61,27 @@
     } @else if (activeCharts(); as c) {
       <div class="sb-charts">
         <figure class="sb-chart">
-          <figcaption>Demand over quarters</figcaption>
+          <figcaption>Test Start per month SB — demand vs actual</figcaption>
           <app-chart-canvas
-            type="line"
-            label="Demand"
-            color="#0a8276"
-            [labels]="labels(c.demand)"
-            [data]="values(c.demand)"></app-chart-canvas>
+            type="bar"
+            [labels]="comboLabels(c.tsDemand, c.tsActual)"
+            [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS')"></app-chart-canvas>
         </figure>
 
         <figure class="sb-chart">
-          <figcaption>Actuals — Test starts, RTU &amp; Cost</figcaption>
+          <figcaption>Test Effort SB — demand vs actual RTU</figcaption>
           <app-chart-canvas
             type="bar"
-            [labels]="actualsLabels(c)"
-            [datasets]="actualsDatasets(c)"></app-chart-canvas>
+            [labels]="comboLabels(c.rtuDemand, c.rtuActual)"
+            [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU')"></app-chart-canvas>
+        </figure>
+
+        <figure class="sb-chart">
+          <figcaption>Test Cost SB — demand vs actual cost</figcaption>
+          <app-chart-canvas
+            type="bar"
+            [labels]="comboLabels(c.costDemand, c.costActual)"
+            [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost')"></app-chart-canvas>
         </figure>
       </div>
     } @else {

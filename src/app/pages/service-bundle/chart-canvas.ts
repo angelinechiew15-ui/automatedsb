@@ -19,6 +19,8 @@ export interface ChartSeries {
   label: string;
   data: number[];
   color: string;
+  /** Render this series as a line or a bar (for mixed charts). */
+  kind?: 'line' | 'bar';
   /** Which y-axis to plot against. 'y1' renders a second axis on the right. */
   axis?: 'y' | 'y1';
 }
@@ -70,17 +72,22 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
     const useSecondAxis = (this.datasets ?? []).some((d) => d.axis === 'y1');
 
     const datasets = this.datasets
-      ? this.datasets.map((d) => ({
-          label: d.label,
-          data: d.data,
-          backgroundColor: this.type === 'line' ? 'transparent' : d.color,
-          borderColor: d.color,
-          borderWidth: 2,
-          tension: 0.3,
-          pointRadius: this.type === 'line' ? 3 : 0,
-          fill: false,
-          yAxisID: d.axis ?? 'y',
-        }))
+      ? this.datasets.map((d) => {
+          const kind = d.kind ?? (this.type === 'line' ? 'line' : 'bar');
+          return {
+            type: kind,
+            label: d.label,
+            data: d.data,
+            backgroundColor: kind === 'line' ? 'transparent' : d.color,
+            borderColor: d.color,
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: kind === 'line' ? 3 : 0,
+            fill: false,
+            yAxisID: d.axis ?? 'y',
+            order: kind === 'line' ? 0 : 1,
+          };
+        })
       : [
           {
             label: this.label,

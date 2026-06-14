@@ -163,24 +163,25 @@ export class ServiceBundle implements OnInit {
     return points.map((p) => p.value);
   }
 
-  /** Quarter labels shared by the actuals bar chart (TS, RTU, Cost). */
-  protected actualsLabels(c: ServiceBundleCharts): string[] {
-    const longest = [c.testStarts, c.rtu, c.cost].reduce(
-      (a, b) => (b.length > a.length ? b : a),
-      [] as ChartPoint[],
-    );
+  /** Quarter labels shared by a demand + actual pair. */
+  protected comboLabels(demand: ChartPoint[], actual: ChartPoint[]): string[] {
+    const longest = demand.length >= actual.length ? demand : actual;
     return longest.map((p) => p.label);
   }
 
-  /** Grouped bar datasets for the actual TS, RTU and Cost values. */
-  protected actualsDatasets(c: ServiceBundleCharts): ChartSeries[] {
-    const labels = this.actualsLabels(c);
+  /** Combined line (demand) + bar (actual) datasets for a measure. */
+  protected comboDatasets(
+    demand: ChartPoint[],
+    actual: ChartPoint[],
+    demandLabel: string,
+    actualLabel: string,
+  ): ChartSeries[] {
+    const labels = this.comboLabels(demand, actual);
     const align = (pts: ChartPoint[]) =>
       labels.map((l) => pts.find((p) => p.label === l)?.value ?? 0);
     return [
-      { label: 'Test starts', data: align(c.testStarts), color: '#e89c0e' },
-      { label: 'RTU', data: align(c.rtu), color: '#1a6bb5' },
-      { label: 'Cost', data: align(c.cost), color: '#cd5300', axis: 'y1' },
+      { label: demandLabel, data: align(demand), color: '#0a8276', kind: 'line' },
+      { label: actualLabel, data: align(actual), color: '#1a6bb5', kind: 'bar' },
     ];
   }
 }
