@@ -35,6 +35,7 @@ export interface ServiceBundleCharts {
   demand: ChartPoint[];
   rtu: ChartPoint[];
   testStarts: ChartPoint[];
+  cost: ChartPoint[];
   pareto: ChartPoint[];
 }
 

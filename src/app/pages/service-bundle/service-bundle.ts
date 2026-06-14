@@ -2,12 +2,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  ChartPoint,
   LookupItem,
   ServiceBundleCharts,
   ServiceBundleDashboard,
   ServiceBundleService,
 } from '../../services/service-bundle.service';
-import { ChartCanvas } from './chart-canvas';
+import { ChartCanvas, ChartSeries } from './chart-canvas';
 
 interface ChartTab {
   id: string;
@@ -160,5 +161,26 @@ export class ServiceBundle implements OnInit {
 
   protected values(points: { label: string; value: number }[]): number[] {
     return points.map((p) => p.value);
+  }
+
+  /** Quarter labels shared by the actuals bar chart (TS, RTU, Cost). */
+  protected actualsLabels(c: ServiceBundleCharts): string[] {
+    const longest = [c.testStarts, c.rtu, c.cost].reduce(
+      (a, b) => (b.length > a.length ? b : a),
+      [] as ChartPoint[],
+    );
+    return longest.map((p) => p.label);
+  }
+
+  /** Grouped bar datasets for the actual TS, RTU and Cost values. */
+  protected actualsDatasets(c: ServiceBundleCharts): ChartSeries[] {
+    const labels = this.actualsLabels(c);
+    const align = (pts: ChartPoint[]) =>
+      labels.map((l) => pts.find((p) => p.label === l)?.value ?? 0);
+    return [
+      { label: 'Test starts', data: align(c.testStarts), color: '#e89c0e' },
+      { label: 'RTU', data: align(c.rtu), color: '#1a6bb5' },
+      { label: 'Cost', data: align(c.cost), color: '#cd5300', axis: 'y1' },
+    ];
   }
 }

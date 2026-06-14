@@ -14,6 +14,15 @@ import { Chart, ChartType, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
+/** One series in a multi-dataset chart. */
+export interface ChartSeries {
+  label: string;
+  data: number[];
+  color: string;
+  /** Which y-axis to plot against. 'y1' renders a second axis on the right. */
+  axis?: 'y' | 'y1';
+}
+
 @Component({
   selector: 'app-chart-canvas',
   standalone: true,
@@ -26,6 +35,8 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
   @Input() data: number[] = [];
   @Input() label = '';
   @Input() color = '#0a8276';
+  /** Optional multi-series data. When set, `data`/`label`/`color` are ignored. */
+  @Input() datasets?: ChartSeries[];
 
   @ViewChild('canvas') private canvasRef!: ElementRef<HTMLCanvasElement>;
 
@@ -53,19 +64,24 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
       return;
     }
 
-    if (this.chart) {
-      this.chart.data.labels = this.labels;
-      this.chart.data.datasets[0].data = this.data;
-      this.chart.data.datasets[0].label = this.label;
-      this.chart.update();
-      return;
-    }
+    // Rebuild on every change to keep dataset count/axes consistent.
+    this.chart?.destroy();
 
-    this.chart = new Chart(this.canvasRef.nativeElement, {
-      type: this.type,
-      data: {
-        labels: this.labels,
-        datasets: [
+    const useSecondAxis = (this.datasets ?? []).some((d) => d.axis === 'y1');
+
+    const datasets = this.datasets
+      ? this.datasets.map((d) => ({
+          label: d.label,
+          data: d.data,
+          backgroundColor: this.type === 'line' ? 'transparent' : d.color,
+          borderColor: d.color,
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: this.type === 'line' ? 3 : 0,
+          fill: false,
+          yAxisID: d.axis ?? 'y',
+        }))
+      : [
           {
             label: this.label,
             data: this.data,
@@ -75,17 +91,35 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
             tension: 0.3,
             pointRadius: this.type === 'line' ? 3 : 0,
             fill: false,
+            yAxisID: 'y',
           },
-        ],
+        ];
+
+    const showLegend = this.datasets ? true : !!this.label;
+
+    this.chart = new Chart(this.canvasRef.nativeElement, {
+      type: this.type,
+      data: {
+        labels: this.labels,
+        datasets,
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: !!this.label },
+          legend: { display: showLegend },
         },
         scales: {
-          y: { beginAtZero: true },
+          y: { beginAtZero: true, position: 'left' },
+          ...(useSecondAxis
+            ? {
+                y1: {
+                  beginAtZero: true,
+                  position: 'right' as const,
+                  grid: { drawOnChartArea: false },
+                },
+              }
+            : {}),
         },
       },
     });

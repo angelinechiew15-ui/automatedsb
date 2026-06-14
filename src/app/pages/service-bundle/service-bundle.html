@@ -71,33 +71,11 @@
         </figure>
 
         <figure class="sb-chart">
-          <figcaption>RTU over quarters</figcaption>
-          <app-chart-canvas
-            type="line"
-            label="RTU"
-            color="#1a6bb5"
-            [labels]="labels(c.rtu)"
-            [data]="values(c.rtu)"></app-chart-canvas>
-        </figure>
-
-        <figure class="sb-chart">
-          <figcaption>Test starts over quarters</figcaption>
+          <figcaption>Actuals — Test starts, RTU &amp; Cost</figcaption>
           <app-chart-canvas
             type="bar"
-            label="Test starts"
-            color="#e89c0e"
-            [labels]="labels(c.testStarts)"
-            [data]="values(c.testStarts)"></app-chart-canvas>
-        </figure>
-
-        <figure class="sb-chart">
-          <figcaption>Pareto by client corridor</figcaption>
-          <app-chart-canvas
-            type="bar"
-            label="Volume"
-            color="#cd5300"
-            [labels]="labels(c.pareto)"
-            [data]="values(c.pareto)"></app-chart-canvas>
+            [labels]="actualsLabels(c)"
+            [datasets]="actualsDatasets(c)"></app-chart-canvas>
         </figure>
       </div>
     } @else {
