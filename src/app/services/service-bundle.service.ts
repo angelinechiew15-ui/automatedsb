@@ -1,11 +1,20 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface LookupItem {
   value: string;
   text: string;
+}
+
+/** A row of the SB-owner-to-SB mapping (same source as the admin SB Owner filter). */
+interface SbOwnerRow {
+  sb: string;
+  sbname: string;
+  persid: string;
+  persname: string;
 }
 
 export interface ServiceBundleDashboard {
@@ -34,9 +43,25 @@ export class ServiceBundleService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBase;
 
-  /** SB owners (persons) for the owner dropdown. */
+  /**
+   * SB owners for the owner dropdown. Uses the same source as the admin
+   * "Service Bundle Owner" filter: unique (persname -> persid) pairs from the
+   * SB-owner-to-SB mapping.
+   */
   listOwners(): Observable<LookupItem[]> {
-    return this.http.get<LookupItem[]>(`${this.base}/refs/sbOwners`);
+    return this.http.get<SbOwnerRow[]>(`${this.base}/sb-owners`).pipe(
+      map((rows) => {
+        const ownerMap = new Map<string, string>(); // persname -> persid
+        for (const r of rows ?? []) {
+          if (r.persname && !ownerMap.has(r.persname)) {
+            ownerMap.set(r.persname, r.persid);
+          }
+        }
+        return Array.from(ownerMap.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([persname, persid]) => ({ value: persid, text: persname }));
+      }),
+    );
   }
 
   /** Current RFC / horizon options. */
