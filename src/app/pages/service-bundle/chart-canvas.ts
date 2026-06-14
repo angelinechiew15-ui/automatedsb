@@ -104,12 +104,40 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
 
     const showLegend = this.datasets ? true : !!this.label;
 
+    // Draws each data value on top of its bar / line point.
+    const valueLabels = {
+      id: 'valueLabels',
+      afterDatasetsDraw: (chart: Chart) => {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = '600 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        chart.data.datasets.forEach((ds, i) => {
+          const meta = chart.getDatasetMeta(i);
+          if (meta.hidden) {
+            return;
+          }
+          meta.data.forEach((el, j) => {
+            const raw = ds.data[j] as number;
+            if (raw === null || raw === undefined) {
+              return;
+            }
+            ctx.fillStyle = (ds.borderColor as string) ?? '#41464b';
+            ctx.fillText(String(raw), el.x, el.y - 4);
+          });
+        });
+        ctx.restore();
+      },
+    };
+
     this.chart = new Chart(this.canvasRef.nativeElement, {
       type: this.type,
       data: {
         labels: this.labels,
         datasets,
       },
+      plugins: [valueLabels],
       options: {
         responsive: true,
         maintainAspectRatio: false,
