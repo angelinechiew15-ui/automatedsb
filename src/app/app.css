@@ -10,5 +10,5 @@
 /* ifx-navbar is fixed, so push the page content below it. */
 .app-main {
   padding: 1.5rem;
-  padding-top: 64px;
+  padding-top: 30px;
 }
