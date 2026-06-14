@@ -22,6 +22,7 @@ export class App {
 
   protected readonly tabs: Tab[] = [
     { path: '/service-bundle-owner', label: 'Service Bundle Owner' },
+    { path: '/service-bundle', label: 'Service Bundle' },
     { path: '/admin', label: 'Admin' },
     { path: '/sb-approval', label: 'SB Approval' },
     { path: '/lab-cost', label: 'Lab Cost' },

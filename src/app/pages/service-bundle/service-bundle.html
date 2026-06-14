@@ -1,0 +1,111 @@
+<div class="sb-page">
+  <h1>Service Bundle</h1>
+
+  <div class="sb-filters">
+    <label class="sb-field">
+      <span>Service Bundle Owner</span>
+      <select [(ngModel)]="selectedOwner" (ngModelChange)="onOwnerChange()">
+        <option value="">Select owner…</option>
+        @for (o of owners(); track o.value) {
+          <option [value]="o.value">{{ o.text }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="sb-field">
+      <span>Service Bundle Name</span>
+      <select [(ngModel)]="selectedSb" [disabled]="!selectedOwner || loadingSbNames()">
+        <option value="">
+          {{ loadingSbNames() ? 'Loading…' : 'Select service bundle…' }}
+        </option>
+        @for (s of sbNames(); track s.value) {
+          <option [value]="s.value">{{ s.text }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="sb-field">
+      <span>Current RFC</span>
+      <select [(ngModel)]="selectedHorizon">
+        <option value="">Select horizon…</option>
+        @for (h of horizons(); track h.value) {
+          <option [value]="h.value">{{ h.text }}</option>
+        }
+      </select>
+    </label>
+
+    <button class="sb-search" (click)="search()" [disabled]="!canSearch() || searching()">
+      {{ searching() ? 'Searching…' : 'Search' }}
+    </button>
+  </div>
+
+  @if (error(); as err) {
+    <div class="sb-error">{{ err }}</div>
+  }
+
+  @if (tabs().length) {
+    <div class="sb-tabs" role="tablist">
+      @for (t of tabs(); track t.id) {
+        <button
+          class="sb-tab"
+          role="tab"
+          [class.active]="activeTab() === t.id"
+          (click)="setActive(t.id)">
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    @if (loadingCharts()) {
+      <p class="sb-hint">Loading charts…</p>
+    } @else if (activeCharts(); as c) {
+      <div class="sb-charts">
+        <figure class="sb-chart">
+          <figcaption>Demand over quarters</figcaption>
+          <app-chart-canvas
+            type="line"
+            label="Demand"
+            color="#0a8276"
+            [labels]="labels(c.demand)"
+            [data]="values(c.demand)"></app-chart-canvas>
+        </figure>
+
+        <figure class="sb-chart">
+          <figcaption>RTU over quarters</figcaption>
+          <app-chart-canvas
+            type="line"
+            label="RTU"
+            color="#1a6bb5"
+            [labels]="labels(c.rtu)"
+            [data]="values(c.rtu)"></app-chart-canvas>
+        </figure>
+
+        <figure class="sb-chart">
+          <figcaption>Test starts over quarters</figcaption>
+          <app-chart-canvas
+            type="bar"
+            label="Test starts"
+            color="#e89c0e"
+            [labels]="labels(c.testStarts)"
+            [data]="values(c.testStarts)"></app-chart-canvas>
+        </figure>
+
+        <figure class="sb-chart">
+          <figcaption>Pareto by client corridor</figcaption>
+          <app-chart-canvas
+            type="bar"
+            label="Volume"
+            color="#cd5300"
+            [labels]="labels(c.pareto)"
+            [data]="values(c.pareto)"></app-chart-canvas>
+        </figure>
+      </div>
+    } @else {
+      <p class="sb-hint">No chart data available for this selection.</p>
+    }
+  } @else if (!searching()) {
+    <p class="sb-hint">
+      Select an owner, a service bundle and a horizon, then click Search to view the charts.
+    </p>
+  }
+</div>
