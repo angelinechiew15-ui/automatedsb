@@ -154,14 +154,14 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
           legend: { display: showLegend },
         },
         scales: {
-          x: { grid: { display: false } },
-          y: { beginAtZero: true, position: 'left', display: false },
+          x: { grid: { display: true } },
+          y: { beginAtZero: true, position: 'left', display: true, grid: { display: false } },
           ...(useSecondAxis
             ? {
                 y1: {
                   beginAtZero: true,
                   position: 'right' as const,
-                  display: false,
+                  display: true,
                   grid: { drawOnChartArea: false },
                 },
               }
