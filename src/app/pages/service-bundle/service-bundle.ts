@@ -47,9 +47,11 @@ export class ServiceBundle implements OnInit {
     () => this.chartCache()[this.activeTab()] ?? null,
   );
 
-  protected readonly canSearch = computed(
-    () => !!this.selectedOwner && !!this.selectedSb && !!this.selectedHorizon,
-  );
+  // Plain method (not a computed) because the selected* fields are plain
+  // properties, not signals — a computed would never re-evaluate on change.
+  protected canSearch(): boolean {
+    return !!this.selectedOwner && !!this.selectedSb && !!this.selectedHorizon;
+  }
 
   ngOnInit(): void {
     this.api.listOwners().subscribe({
