@@ -30,6 +30,28 @@ export interface ChartPoint {
   value: number;
 }
 
+/** Raw component values for a TS/RTU detail row (location tabs only). */
+export interface MeasureBreakdownRow {
+  label: string;
+  baseDemand: number;
+  adderDemand: number;
+  baseActual: number;
+  changeActual: number;
+  /** Only present for RTU rows. */
+  rtuTs?: number;
+}
+
+/** Raw component values for a Cost detail row (location tabs only). */
+export interface CostBreakdownRow {
+  label: string;
+  rfcWoDemand: number;
+  depreciation: number;
+  adderDemand: number;
+  baseActual: number;
+  changeActual: number;
+  costRtu: number;
+}
+
 export interface ServiceBundleCharts {
   success: boolean;
   tsDemand: ChartPoint[];
@@ -39,6 +61,9 @@ export interface ServiceBundleCharts {
   costDemand: ChartPoint[];
   costActual: ChartPoint[];
   pareto: ChartPoint[];
+  tsRows: MeasureBreakdownRow[];
+  rtuRows: MeasureBreakdownRow[];
+  costRows: CostBreakdownRow[];
 }
 
 @Injectable({ providedIn: 'root' })

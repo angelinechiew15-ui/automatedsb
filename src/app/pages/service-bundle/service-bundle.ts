@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   ChartPoint,
+  CostBreakdownRow,
   LookupItem,
+  MeasureBreakdownRow,
   ServiceBundleCharts,
   ServiceBundleDashboard,
   ServiceBundleService,
@@ -14,6 +16,33 @@ interface ChartTab {
   id: string;
   label: string;
   loc: string;
+}
+
+/** A fully-derived TS/RTU detail row for the per-location tables. */
+export interface MeasureDetailRow {
+  label: string;
+  baseDemand: number;
+  adderDemand: number;
+  demandWithAdder: number;
+  baseActual: number;
+  changeActual: number;
+  actualWithAdder: number;
+  utilization: number;
+  rtuTs?: number;
+}
+
+/** A fully-derived Cost detail row for the per-location tables. */
+export interface CostDetailRow {
+  label: string;
+  rfcWoDemand: number;
+  depreciation: number;
+  adderDemand: number;
+  demandWithAdder: number;
+  actual: number;
+  changeActual: number;
+  actualWithAdder: number;
+  deviation: number | null;
+  costRtu: number;
 }
 
 @Component({
@@ -187,6 +216,11 @@ export class ServiceBundle implements OnInit {
     return !tab || tab.loc === '';
   }
 
+  /** Template flag: show the detailed breakdown tables (location tabs only). */
+  protected showDetail(): boolean {
+    return !this.isAllTab();
+  }
+
   /** All tab: drop decimals (nearest integer). Location tab: round the decimal up. */
   protected roundForTab(n: number): number {
     return this.isAllTab() ? Math.round(n) : Math.ceil(n);
@@ -227,6 +261,60 @@ export class ServiceBundle implements OnInit {
         demand: this.roundForTab(d),
         actual: this.roundForTab(a),
         utilization: this.roundForTab(util),
+      };
+    });
+  }
+
+  /** Round ratios/percentages to 2 decimals. */
+  private round2(n: number): number {
+    return Math.round(n * 100) / 100;
+  }
+
+  /** Detailed TS/RTU rows (location tabs): base, adder, with-adder, actual, utilization. */
+  protected measureDetailRows(rows: MeasureBreakdownRow[] | undefined): MeasureDetailRow[] {
+    return (rows ?? []).map((r) => {
+      const demandWithAdder = r.baseDemand + r.adderDemand;
+      const actualWithAdder = r.baseActual + r.changeActual;
+      const util = demandWithAdder !== 0 ? (actualWithAdder / demandWithAdder) * 100 : 0;
+      const row: MeasureDetailRow = {
+        label: r.label,
+        baseDemand: this.roundForTab(r.baseDemand),
+        adderDemand: this.roundForTab(r.adderDemand),
+        demandWithAdder: this.roundForTab(demandWithAdder),
+        baseActual: this.roundForTab(r.baseActual),
+        changeActual: this.roundForTab(r.changeActual),
+        actualWithAdder: this.roundForTab(actualWithAdder),
+        utilization: this.roundForTab(util),
+      };
+      if (r.rtuTs !== undefined) {
+        row.rtuTs = this.round2(r.rtuTs);
+      }
+      return row;
+    });
+  }
+
+  /** Detailed Cost rows (location tabs): demand components, actual, deviation. */
+  protected costDetailRows(rows: CostBreakdownRow[] | undefined): CostDetailRow[] {
+    return (rows ?? []).map((r) => {
+      const demandWithAdder = r.rfcWoDemand + r.adderDemand;
+      const actualWithAdder = r.baseActual + r.changeActual;
+      // Deviation: blank when actual-with-adder is exactly 0, or when there is no
+      // demand to divide by; otherwise (actual / demand) - 1.
+      const deviation =
+        actualWithAdder === 0 || demandWithAdder === 0
+          ? null
+          : this.round2(actualWithAdder / demandWithAdder - 1);
+      return {
+        label: r.label,
+        rfcWoDemand: this.roundForTab(r.rfcWoDemand),
+        depreciation: this.roundForTab(r.depreciation),
+        adderDemand: this.roundForTab(r.adderDemand),
+        demandWithAdder: this.roundForTab(demandWithAdder),
+        actual: this.roundForTab(r.baseActual),
+        changeActual: this.roundForTab(r.changeActual),
+        actualWithAdder: this.roundForTab(actualWithAdder),
+        deviation,
+        costRtu: this.round2(r.costRtu),
       };
     });
   }

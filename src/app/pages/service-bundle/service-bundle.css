@@ -153,3 +153,14 @@
   font-weight: 600;
 }
 
+/* Detailed per-location tables have many columns: let them take the full row
+   width below the chart and scroll horizontally on narrow screens. */
+.sb-table-wide {
+  flex: 1 1 100%;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
