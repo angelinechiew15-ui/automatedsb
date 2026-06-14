@@ -71,11 +71,11 @@
             </figure>
             <table class="sb-table">
               <thead>
-                <tr><th>FY Quarter</th><th>Demand TS</th><th>Actual TS</th></tr>
+                <tr><th>FY Quarter</th><th>Demand TS</th><th>Actual TS</th><th>Utilization (%)</th></tr>
               </thead>
               <tbody>
                 @for (r of comboRows(c.tsDemand, c.tsActual); track r.label) {
-                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.utilization }}</td></tr>
                 }
               </tbody>
             </table>
@@ -93,11 +93,11 @@
             </figure>
             <table class="sb-table">
               <thead>
-                <tr><th>FY Quarter</th><th>Demand RTU</th><th>Actual RTU</th></tr>
+                <tr><th>FY Quarter</th><th>Demand RTU</th><th>Actual RTU</th><th>Utilization (%)</th></tr>
               </thead>
               <tbody>
                 @for (r of comboRows(c.rtuDemand, c.rtuActual); track r.label) {
-                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.utilization }}</td></tr>
                 }
               </tbody>
             </table>

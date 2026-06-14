@@ -181,6 +181,17 @@ export class ServiceBundle implements OnInit {
     return longest.map((p) => p.label);
   }
 
+  /** True when the "All" (aggregate) tab is active, false for a single location. */
+  private isAllTab(): boolean {
+    const tab = this.tabs().find((t) => t.id === this.activeTab());
+    return !tab || tab.loc === '';
+  }
+
+  /** All tab: drop decimals (nearest integer). Location tab: round the decimal up. */
+  protected roundForTab(n: number): number {
+    return this.isAllTab() ? Math.round(n) : Math.ceil(n);
+  }
+
   /** Combined line (demand) + bar (actual) datasets for a measure. */
   protected comboDatasets(
     demand: ChartPoint[],
@@ -190,25 +201,31 @@ export class ServiceBundle implements OnInit {
   ): ChartSeries[] {
     const labels = this.comboLabels(demand, actual);
     const align = (pts: ChartPoint[]) =>
-      labels.map((l) => pts.find((p) => p.label === l)?.value ?? 0);
+      labels.map((l) => this.roundForTab(pts.find((p) => p.label === l)?.value ?? 0));
     return [
       { label: demandLabel, data: align(demand), color: '#0a8276', kind: 'line' },
       { label: actualLabel, data: align(actual), color: '#1a6bb5', kind: 'bar' },
     ];
   }
 
-  /** Table rows (fy_quarter, demand, actual) shown beside each chart. */
+  /** Table rows (fy_quarter, demand, actual, utilization) shown beside each chart. */
   protected comboRows(
     demand: ChartPoint[],
     actual: ChartPoint[],
-  ): { label: string; demand: number; actual: number }[] {
+  ): { label: string; demand: number; actual: number; utilization: number }[] {
     const labels = this.comboLabels(demand, actual);
     const find = (pts: ChartPoint[], l: string) =>
       pts.find((p) => p.label === l)?.value ?? 0;
-    return labels.map((l) => ({
-      label: l,
-      demand: find(demand, l),
-      actual: find(actual, l),
-    }));
+    return labels.map((l) => {
+      const d = find(demand, l);
+      const a = find(actual, l);
+      const util = d !== 0 ? (a / d) * 100 : 0;
+      return {
+        label: l,
+        demand: this.roundForTab(d),
+        actual: this.roundForTab(a),
+        utilization: this.roundForTab(util),
+      };
+    });
   }
 }
