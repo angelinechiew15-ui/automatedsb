@@ -104,7 +104,8 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
 
     const showLegend = this.datasets ? true : !!this.label;
 
-    // Draws each data value on top of its bar / line point.
+    // Draws each data value: bar values near the bottom of the bar, line values
+    // above the line point — kept apart so they don't overlap. Always black.
     const valueLabels = {
       id: 'valueLabels',
       afterDatasetsDraw: (chart: Chart) => {
@@ -112,19 +113,27 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
         ctx.save();
         ctx.font = '600 11px sans-serif';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = '#000';
         chart.data.datasets.forEach((ds, i) => {
           const meta = chart.getDatasetMeta(i);
           if (meta.hidden) {
             return;
           }
+          const isLine = (ds as { type?: string }).type === 'line';
           meta.data.forEach((el, j) => {
             const raw = ds.data[j] as number;
             if (raw === null || raw === undefined) {
               return;
             }
-            ctx.fillStyle = (ds.borderColor as string) ?? '#41464b';
-            ctx.fillText(String(raw), el.x, el.y - 4);
+            const point = el as unknown as { x: number; y: number; base?: number };
+            if (isLine) {
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(String(raw), point.x, point.y - 6);
+            } else {
+              const base = point.base ?? point.y;
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(String(raw), point.x, base - 4);
+            }
           });
         });
         ctx.restore();
@@ -145,12 +154,14 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
           legend: { display: showLegend },
         },
         scales: {
-          y: { beginAtZero: true, position: 'left' },
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, position: 'left', display: false },
           ...(useSecondAxis
             ? {
                 y1: {
                   beginAtZero: true,
                   position: 'right' as const,
+                  display: false,
                   grid: { drawOnChartArea: false },
                 },
               }
