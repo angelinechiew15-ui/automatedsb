@@ -89,6 +89,18 @@ export class ServiceBundle implements OnInit {
     });
   }
 
+  /** Re-filter the already-loaded charts when the horizon changes. */
+  protected onHorizonChange(): void {
+    if (!this.tabs().length) {
+      return; // nothing searched yet; horizon applies on next search
+    }
+    this.chartCache.set({});
+    const active = this.activeTab();
+    if (active) {
+      this.setActive(active);
+    }
+  }
+
   protected search(): void {
     if (!this.canSearch()) {
       return;

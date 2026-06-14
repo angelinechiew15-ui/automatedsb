@@ -26,7 +26,7 @@
 
     <label class="sb-field">
       <span>Current RFC</span>
-      <select [(ngModel)]="selectedHorizon">
+      <select [(ngModel)]="selectedHorizon" (ngModelChange)="onHorizonChange()">
         <option value="">Select horizon…</option>
         @for (h of horizons(); track h.value) {
           <option [value]="h.value">{{ h.text }}</option>
