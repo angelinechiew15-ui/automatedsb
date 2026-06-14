@@ -70,6 +70,8 @@ export class ServiceBundle implements OnInit {
 
   protected readonly tabs = signal<ChartTab[]>([]);
   protected readonly activeTab = signal<string>('');
+  /** Name of the searched service bundle, shown in the category titles. */
+  protected readonly sbName = signal<string>('');
 
   // Chart data cached per tab id so switching tabs doesn't refetch.
   private readonly chartCache = signal<Record<string, ServiceBundleCharts>>({});
@@ -156,6 +158,7 @@ export class ServiceBundle implements OnInit {
   }
 
   private buildTabs(d: ServiceBundleDashboard): void {
+    this.sbName.set(d.sbName ?? '');
     const isTestfloor = (d.sbName ?? '').toLowerCase().includes('testfloor');
     const tabs: ChartTab[] = [{ id: 'All', label: 'All', loc: '' }];
 

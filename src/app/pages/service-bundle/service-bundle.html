@@ -61,7 +61,7 @@
     } @else if (activeCharts(); as c) {
       <div class="sb-charts">
         <section class="sb-category">
-          <h3 class="sb-category-title">Test Start per month</h3>
+          <h3 class="sb-category-title">Test Start per Month @if (sbName()) {<span>- {{ sbName() }}</span>}</h3>
           <div class="sb-category-body">
             <figure class="sb-chart">
               <app-chart-canvas
@@ -114,7 +114,7 @@
         </section>
 
         <section class="sb-category">
-          <h3 class="sb-category-title">Test Effort</h3>
+          <h3 class="sb-category-title">Test Effort @if (sbName()) {<span>- {{ sbName() }}</span>}</h3>
           <div class="sb-category-body">
             <figure class="sb-chart">
               <app-chart-canvas
@@ -169,7 +169,7 @@
         </section>
 
         <section class="sb-category">
-          <h3 class="sb-category-title">Test Cost</h3>
+          <h3 class="sb-category-title">Test Cost @if (sbName()) {<span>- {{ sbName() }}</span>}</h3>
           <div class="sb-category-body">
             <figure class="sb-chart">
               <app-chart-canvas
