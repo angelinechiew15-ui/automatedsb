@@ -196,4 +196,19 @@ export class ServiceBundle implements OnInit {
       { label: actualLabel, data: align(actual), color: '#1a6bb5', kind: 'bar' },
     ];
   }
+
+  /** Table rows (fy_quarter, demand, actual) shown beside each chart. */
+  protected comboRows(
+    demand: ChartPoint[],
+    actual: ChartPoint[],
+  ): { label: string; demand: number; actual: number }[] {
+    const labels = this.comboLabels(demand, actual);
+    const find = (pts: ChartPoint[], l: string) =>
+      pts.find((p) => p.label === l)?.value ?? 0;
+    return labels.map((l) => ({
+      label: l,
+      demand: find(demand, l),
+      actual: find(actual, l),
+    }));
+  }
 }

@@ -60,29 +60,71 @@
       <p class="sb-hint">Loading charts…</p>
     } @else if (activeCharts(); as c) {
       <div class="sb-charts">
-        <figure class="sb-chart">
-          <figcaption>Test Start per month SB — demand vs actual</figcaption>
-          <app-chart-canvas
-            type="bar"
-            [labels]="comboLabels(c.tsDemand, c.tsActual)"
-            [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS')"></app-chart-canvas>
-        </figure>
+        <section class="sb-category">
+          <h3 class="sb-category-title">Test Start per month</h3>
+          <div class="sb-category-body">
+            <figure class="sb-chart">
+              <app-chart-canvas
+                type="bar"
+                [labels]="comboLabels(c.tsDemand, c.tsActual)"
+                [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS')"></app-chart-canvas>
+            </figure>
+            <table class="sb-table">
+              <thead>
+                <tr><th>FY Quarter</th><th>Demand TS</th><th>Actual TS</th></tr>
+              </thead>
+              <tbody>
+                @for (r of comboRows(c.tsDemand, c.tsActual); track r.label) {
+                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <figure class="sb-chart">
-          <figcaption>Test Effort SB — demand vs actual RTU</figcaption>
-          <app-chart-canvas
-            type="bar"
-            [labels]="comboLabels(c.rtuDemand, c.rtuActual)"
-            [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU')"></app-chart-canvas>
-        </figure>
+        <section class="sb-category">
+          <h3 class="sb-category-title">Test Effort</h3>
+          <div class="sb-category-body">
+            <figure class="sb-chart">
+              <app-chart-canvas
+                type="bar"
+                [labels]="comboLabels(c.rtuDemand, c.rtuActual)"
+                [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU')"></app-chart-canvas>
+            </figure>
+            <table class="sb-table">
+              <thead>
+                <tr><th>FY Quarter</th><th>Demand RTU</th><th>Actual RTU</th></tr>
+              </thead>
+              <tbody>
+                @for (r of comboRows(c.rtuDemand, c.rtuActual); track r.label) {
+                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <figure class="sb-chart">
-          <figcaption>Test Cost SB — demand vs actual cost</figcaption>
-          <app-chart-canvas
-            type="bar"
-            [labels]="comboLabels(c.costDemand, c.costActual)"
-            [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost')"></app-chart-canvas>
-        </figure>
+        <section class="sb-category">
+          <h3 class="sb-category-title">Test Cost</h3>
+          <div class="sb-category-body">
+            <figure class="sb-chart">
+              <app-chart-canvas
+                type="bar"
+                [labels]="comboLabels(c.costDemand, c.costActual)"
+                [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost')"></app-chart-canvas>
+            </figure>
+            <table class="sb-table">
+              <thead>
+                <tr><th>FY Quarter</th><th>Demand Cost</th><th>Actual Cost</th></tr>
+              </thead>
+              <tbody>
+                @for (r of comboRows(c.costDemand, c.costActual); track r.label) {
+                  <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     } @else {
       <p class="sb-hint">No chart data available for this selection.</p>

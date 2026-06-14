@@ -91,20 +91,65 @@
 }
 
 .sb-charts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sb-category {
+  border: 1px solid #e3e5e8;
+  border-radius: 6px;
+  background: #fff;
+  padding: 1rem;
+}
+
+.sb-category-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0a8276;
+}
+
+.sb-category-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 1.5rem;
 }
 
 .sb-chart {
   margin: 0;
-  padding: 1rem;
-  border: 1px solid #e3e5e8;
-  border-radius: 6px;
-  background: #fff;
+  flex: 0 0 520px;
+  max-width: 520px;
+  height: 320px;
 }
 
 .sb-chart figcaption {
   font-weight: 600;
   margin-bottom: 0.75rem;
 }
+
+.sb-table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 280px;
+}
+
+.sb-table th,
+.sb-table td {
+  border: 1px solid #e3e5e8;
+  padding: 0.35rem 0.75rem;
+  text-align: right;
+}
+
+.sb-table th:first-child,
+.sb-table td:first-child {
+  text-align: left;
+}
+
+.sb-table thead th {
+  background: #f1f2f3;
+  font-weight: 600;
+}
+
