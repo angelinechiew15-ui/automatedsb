@@ -19,22 +19,29 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.85rem;
-  min-width: 240px;
+  min-width: 180px;
+}
+
+.sb-field span {
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: #374151;
 }
 
 .sb-field select {
-  height: 2.25rem;
-  padding: 0 0.5rem;
-  border: 1px solid #b3b6b9;
-  border-radius: 4px;
-  background: #fff;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
   font-size: 0.9rem;
+  font-family: inherit;
+  background: #fff;
 }
 
 .sb-field select:disabled {
-  background: #f1f2f3;
-  color: #8a8d90;
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
 }
 
 .sb-search {
@@ -170,4 +177,3 @@
   white-space: normal;
   word-break: break-word;
 }
-
