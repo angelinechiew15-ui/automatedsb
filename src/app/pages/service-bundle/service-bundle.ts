@@ -198,13 +198,15 @@ export class ServiceBundle implements OnInit {
     actual: ChartPoint[],
     demandLabel: string,
     actualLabel: string,
+    lineColor = '#0a8276',
+    barColor = '#1a6bb5',
   ): ChartSeries[] {
     const labels = this.comboLabels(demand, actual);
     const align = (pts: ChartPoint[]) =>
       labels.map((l) => this.roundForTab(pts.find((p) => p.label === l)?.value ?? 0));
     return [
-      { label: demandLabel, data: align(demand), color: '#0a8276', kind: 'line' },
-      { label: actualLabel, data: align(actual), color: '#1a6bb5', kind: 'bar' },
+      { label: demandLabel, data: align(demand), color: lineColor, kind: 'line' },
+      { label: actualLabel, data: align(actual), color: barColor, kind: 'bar' },
     ];
   }
 

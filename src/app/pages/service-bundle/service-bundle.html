@@ -67,7 +67,7 @@
               <app-chart-canvas
                 type="bar"
                 [labels]="comboLabels(c.tsDemand, c.tsActual)"
-                [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS')"></app-chart-canvas>
+                [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
             <table class="sb-table">
               <thead>
@@ -89,7 +89,7 @@
               <app-chart-canvas
                 type="bar"
                 [labels]="comboLabels(c.rtuDemand, c.rtuActual)"
-                [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU')"></app-chart-canvas>
+                [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU', '#5ea290', '#aec067')"></app-chart-canvas>
             </figure>
             <table class="sb-table">
               <thead>
@@ -111,7 +111,7 @@
               <app-chart-canvas
                 type="bar"
                 [labels]="comboLabels(c.costDemand, c.costActual)"
-                [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost')"></app-chart-canvas>
+                [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost', '#f5c631', '#928285')"></app-chart-canvas>
             </figure>
             <table class="sb-table">
               <thead>
