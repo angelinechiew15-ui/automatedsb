@@ -111,7 +111,7 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
       afterDatasetsDraw: (chart: Chart) => {
         const { ctx } = chart;
         ctx.save();
-        ctx.font = '600 11px sans-serif';
+        ctx.font = '400 11px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#000';
         chart.data.datasets.forEach((ds, i) => {
