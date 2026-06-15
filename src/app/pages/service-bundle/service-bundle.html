@@ -65,20 +65,20 @@
               <app-chart-canvas
                 type="bar"
                 [yAxisLabel]="'TSpM'"
-                [labels]="comboLabels(c.tsDemand, c.tsActual)"
-                [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
+                [labels]="comboLabels(demandLinePoints(c.tsRows, c.tsDemand), c.tsActual)"
+                [datasets]="comboDatasets(demandLinePoints(c.tsRows, c.tsDemand), c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
               <table class="sb-table sb-table-wide sb-head-ts">
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
-                    <th>TSPM RFC Demand</th>
+                    <th>TSpM RFC Demand</th>
                     <th>Adder Value TS Demand</th>
-                    <th>TSPM RFC Demand with Adder</th>
-                    <th>TSPM Actual</th>
+                    <th>TSpM RFC Demand w/o Adder</th>
+                    <th>TSpM Actual</th>
                     <th>Adder Value TS Actual</th>
-                    <th>TSPM Actual w/o Adder</th>
+                    <th>TSpM Actual w/o Adder</th>
                     <th>Utilization (%)</th>
                   </tr>
                 </thead>
@@ -86,12 +86,12 @@
                   @for (r of measureDetailRows(c.tsRows); track r.label) {
                     <tr>
                       <td>{{ r.label }}</td>
-                      <td>{{ r.baseDemand }}</td>
-                      <td>{{ r.adderDemand }}</td>
                       <td>{{ r.demandWithAdder }}</td>
-                      <td>{{ r.baseActual }}</td>
-                      <td>{{ r.changeActual }}</td>
+                      <td>{{ r.adderDemand }}</td>
+                      <td>{{ r.baseDemand }}</td>
                       <td>{{ r.actualWithAdder }}</td>
+                      <td>{{ r.changeActual }}</td>
+                      <td>{{ r.baseActual }}</td>
                       <td>{{ r.utilization }}</td>
                     </tr>
                   }

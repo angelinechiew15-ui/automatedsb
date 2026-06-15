@@ -223,6 +223,19 @@ export class ServiceBundle implements OnInit {
     return this.comboLabels(demand, actual).map((l) => this.qtrAvgLabel(l));
   }
 
+  /** Demand line points sourced from the detail rows (base + adder) on location
+   *  tabs so the line matches the table's "with adder" total; falls back to the
+   *  combined series on the All tab where no detail rows exist. */
+  protected demandLinePoints(
+    rows: MeasureBreakdownRow[] | undefined,
+    fallback: ChartPoint[],
+  ): ChartPoint[] {
+    if (rows && rows.length) {
+      return rows.map((r) => ({ label: r.label, value: r.baseDemand + r.adderDemand }));
+    }
+    return fallback;
+  }
+
   /** True when the "All" (aggregate) tab is active, false for a single location. */
   private isAllTab(): boolean {
     const tab = this.tabs().find((t) => t.id === this.activeTab());
