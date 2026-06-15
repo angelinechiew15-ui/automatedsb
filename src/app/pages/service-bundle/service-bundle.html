@@ -65,8 +65,8 @@
               <app-chart-canvas
                 type="bar"
                 [yAxisLabel]="'TSpM'"
-                [labels]="comboLabels(demandLinePoints(c.tsRows, c.tsDemand), c.tsActual)"
-                [datasets]="comboDatasets(demandLinePoints(c.tsRows, c.tsDemand), c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
+                [labels]="comboLabels(demandLinePoints(c.tsRows, c.tsDemand), actualBarPoints(c.tsRows, c.tsActual))"
+                [datasets]="comboDatasets(demandLinePoints(c.tsRows, c.tsDemand), actualBarPoints(c.tsRows, c.tsActual), 'TSpM RFC Demand', 'TSpM Actual', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
               <table class="sb-table sb-table-wide sb-head-ts">
@@ -119,8 +119,8 @@
               <app-chart-canvas
                 type="bar"
                 [yAxisLabel]="'RTU'"
-                [labels]="comboLabelsAvg(c.rtuDemand, c.rtuActual)"
-                [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU', '#aec067', '#5ea290')"></app-chart-canvas>
+                [labels]="comboLabelsAvg(demandLinePoints(c.rtuRows, c.rtuDemand), actualBarPoints(c.rtuRows, c.rtuActual))"
+                [datasets]="comboDatasets(demandLinePoints(c.rtuRows, c.rtuDemand), actualBarPoints(c.rtuRows, c.rtuActual), 'RTU RFC Demand', 'RTU Actual', '#aec067', '#5ea290')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
               <table class="sb-table sb-table-wide sb-head-rtu">
@@ -175,18 +175,18 @@
               <app-chart-canvas
                 type="bar"
                 [yAxisLabel]="'k EUR'"
-                [labels]="comboLabelsAvg(c.costDemand, c.costActual)"
-                [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost', '#f5c631', '#928285')"></app-chart-canvas>
+                [labels]="comboLabelsAvg(costDemandLinePoints(c.costRows, c.costDemand), costActualBarPoints(c.costRows, c.costActual))"
+                [datasets]="comboDatasets(costDemandLinePoints(c.costRows, c.costDemand), costActualBarPoints(c.costRows, c.costActual), 'Cost RFC Demand', 'Cost Actual', '#f5c631', '#928285')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
               <table class="sb-table sb-table-wide sb-head-cost">
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
-                    <th>Cost RFC w/o Demand</th>
+                    <th>Cost RFC w/o Depreciation</th>
                     <th>Cost RFC Depreciation</th>
                     <th>Adder Value Cost Demand</th>
-                    <th>Cost RFC Demand with Adder</th>
+                    <th>Cost RFC Demand</th>
                     <th>Cost Actual</th>
                     <th>Adder Value Cost Actual</th>
                     <th>Cost Actual w/o Adder</th>

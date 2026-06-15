@@ -236,6 +236,39 @@ export class ServiceBundle implements OnInit {
     return fallback;
   }
 
+  /** Actual bar points sourced from detail rows (base + change) on location tabs. */
+  protected actualBarPoints(
+    rows: MeasureBreakdownRow[] | undefined,
+    fallback: ChartPoint[],
+  ): ChartPoint[] {
+    if (rows && rows.length) {
+      return rows.map((r) => ({ label: r.label, value: r.baseActual + r.changeActual }));
+    }
+    return fallback;
+  }
+
+  /** Cost demand line points sourced from detail rows (rfc w/o + adder). */
+  protected costDemandLinePoints(
+    rows: CostBreakdownRow[] | undefined,
+    fallback: ChartPoint[],
+  ): ChartPoint[] {
+    if (rows && rows.length) {
+      return rows.map((r) => ({ label: r.label, value: r.rfcWoDemand + r.adderDemand }));
+    }
+    return fallback;
+  }
+
+  /** Cost actual bar points sourced from detail rows (base + change). */
+  protected costActualBarPoints(
+    rows: CostBreakdownRow[] | undefined,
+    fallback: ChartPoint[],
+  ): ChartPoint[] {
+    if (rows && rows.length) {
+      return rows.map((r) => ({ label: r.label, value: r.baseActual + r.changeActual }));
+    }
+    return fallback;
+  }
+
   /** True when the "All" (aggregate) tab is active, false for a single location. */
   private isAllTab(): boolean {
     const tab = this.tabs().find((t) => t.id === this.activeTab());
