@@ -23,6 +23,8 @@ export interface ServiceBundleDashboard {
   sbName: string;
   clientCorridors: string[];
   labs: LookupItem[];
+  /** Locations that have TS/RTU/COST actuals and TS demand > 0 for the horizon. */
+  validLocations?: string[];
 }
 
 export interface ChartPoint {
@@ -104,8 +106,11 @@ export class ServiceBundleService {
   }
 
   /** Dashboard metadata (SB name, client corridors, labs) for the selected SB. */
-  getDashboard(sbId: string): Observable<ServiceBundleDashboard> {
-    const params = new HttpParams().set('sbId', sbId);
+  getDashboard(sbId: string, horizon = ''): Observable<ServiceBundleDashboard> {
+    let params = new HttpParams().set('sbId', sbId);
+    if (horizon) {
+      params = params.set('horizon', horizon);
+    }
     return this.http.get<ServiceBundleDashboard>(`${this.base}/service-bundle/dashboard`, { params });
   }
 

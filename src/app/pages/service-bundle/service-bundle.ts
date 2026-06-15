@@ -120,28 +120,28 @@ export class ServiceBundle implements OnInit {
     });
   }
 
-  /** Re-filter the already-loaded charts when the horizon changes. */
+  /** Rebuild tabs when the horizon changes (tab visibility depends on the data). */
   protected onHorizonChange(): void {
     if (!this.tabs().length) {
       return; // nothing searched yet; horizon applies on next search
     }
-    this.chartCache.set({});
-    const active = this.activeTab();
-    if (active) {
-      this.setActive(active);
-    }
+    this.loadDashboard();
   }
 
   protected search(): void {
     if (!this.canSearch()) {
       return;
     }
+    this.loadDashboard();
+  }
+
+  private loadDashboard(): void {
     this.error.set(null);
     this.searching.set(true);
     this.tabs.set([]);
     this.chartCache.set({});
 
-    this.api.getDashboard(this.selectedSb).subscribe({
+    this.api.getDashboard(this.selectedSb, this.selectedHorizon).subscribe({
       next: (data) => {
         this.buildTabs(data);
         this.searching.set(false);
@@ -160,15 +160,19 @@ export class ServiceBundle implements OnInit {
   private buildTabs(d: ServiceBundleDashboard): void {
     this.sbName.set(d.sbName ?? '');
     const isTestfloor = (d.sbName ?? '').toLowerCase().includes('testfloor');
+    const valid = d.validLocations;
+    const show = (loc: string) => !valid || valid.includes(loc);
     const tabs: ChartTab[] = [{ id: 'All', label: 'All', loc: '' }];
 
-    tabs.push({ id: 'RPTCENTRAL', label: 'RPT Central', loc: 'RPT CENTRAL' });
-    if (!isTestfloor) {
+    if (show('RPT CENTRAL')) {
+      tabs.push({ id: 'RPTCENTRAL', label: 'RPT Central', loc: 'RPT CENTRAL' });
+    }
+    if (!isTestfloor && show('RPT MUC ESD')) {
       tabs.push({ id: 'RPTMUCESD', label: 'RPT MUC ESD', loc: 'RPT MUC ESD' });
     }
 
     for (const lab of d.labs ?? []) {
-      if (!lab.text) {
+      if (!lab.text || !show(lab.text)) {
         continue;
       }
       tabs.push({ id: lab.value || lab.text, label: lab.text, loc: lab.text });
