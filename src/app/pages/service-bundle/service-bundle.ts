@@ -247,13 +247,16 @@ export class ServiceBundle implements OnInit {
     return fallback;
   }
 
-  /** Cost demand line points sourced from detail rows (rfc w/o + adder). */
+  /** Cost demand line points sourced from detail rows (rfc w/o + depreciation + adder). */
   protected costDemandLinePoints(
     rows: CostBreakdownRow[] | undefined,
     fallback: ChartPoint[],
   ): ChartPoint[] {
     if (rows && rows.length) {
-      return rows.map((r) => ({ label: r.label, value: r.rfcWoDemand + r.adderDemand }));
+      return rows.map((r) => ({
+        label: r.label,
+        value: r.rfcWoDemand + r.depreciation + r.adderDemand,
+      }));
     }
     return fallback;
   }
@@ -356,7 +359,7 @@ export class ServiceBundle implements OnInit {
   /** Detailed Cost rows (location tabs): demand components, actual, deviation. */
   protected costDetailRows(rows: CostBreakdownRow[] | undefined): CostDetailRow[] {
     return (rows ?? []).map((r) => {
-      const demandWithAdder = r.rfcWoDemand + r.adderDemand;
+      const demandWithAdder = r.rfcWoDemand + r.depreciation + r.adderDemand;
       const actualWithAdder = r.baseActual + r.changeActual;
       // Deviation: blank when actual-with-adder is exactly 0, or when there is no
       // demand to divide by; otherwise (actual / demand) - 1.
