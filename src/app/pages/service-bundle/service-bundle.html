@@ -68,7 +68,7 @@
                 [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
-              <table class="sb-table sb-table-wide">
+              <table class="sb-table sb-table-wide sb-head-ts">
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
@@ -97,7 +97,7 @@
                 </tbody>
               </table>
             } @else {
-              <table class="sb-table">
+              <table class="sb-table sb-head-ts">
                 <thead>
                   <tr><th>FY Quarter</th><th>Demand TS</th><th>Actual TS</th><th>Utilization (%)</th></tr>
                 </thead>
@@ -121,7 +121,7 @@
                 [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU', '#aec067', '#5ea290')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
-              <table class="sb-table sb-table-wide">
+              <table class="sb-table sb-table-wide sb-head-rtu">
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
@@ -152,7 +152,7 @@
                 </tbody>
               </table>
             } @else {
-              <table class="sb-table">
+              <table class="sb-table sb-head-rtu">
                 <thead>
                   <tr><th>FY Quarter</th><th>Demand RTU</th><th>Actual RTU</th><th>Utilization (%)</th></tr>
                 </thead>
@@ -176,7 +176,7 @@
                 [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost', '#f5c631', '#928285')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
-              <table class="sb-table sb-table-wide">
+              <table class="sb-table sb-table-wide sb-head-cost">
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
@@ -209,7 +209,7 @@
                 </tbody>
               </table>
             } @else {
-              <table class="sb-table">
+              <table class="sb-table sb-head-cost">
                 <thead>
                   <tr><th>FY Quarter</th><th>Demand Cost</th><th>Actual Cost</th></tr>
                 </thead>

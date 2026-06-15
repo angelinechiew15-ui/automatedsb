@@ -160,6 +160,22 @@
   font-weight: 600;
 }
 
+/* Header colours match each category's chart bar colour. */
+.sb-head-ts thead th {
+  background: #ab377a;
+  color: #fff;
+}
+
+.sb-head-rtu thead th {
+  background: #5ea290;
+  color: #fff;
+}
+
+.sb-head-cost thead th {
+  background: #928285;
+  color: #fff;
+}
+
 /* Detailed per-location tables have many columns: place them next to the chart
    and keep the columns compact so everything fits side by side. */
 .sb-table-wide {
