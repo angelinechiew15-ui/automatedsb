@@ -127,12 +127,12 @@
                 <thead>
                   <tr>
                     <th>FY Quarter</th>
-                    <th>RTU RFC Demand w/o Adder</th>
-                    <th>Adder Value RTU Demand</th>
                     <th>RTU RFC Demand</th>
-                    <th>RTU Actual w/o Adder</th>
-                    <th>Adder Value RTU Actual</th>
+                    <th>Adder Value RTU Demand</th>
+                    <th>RTU RFC Demand w/o Adder</th>
                     <th>RTU Actual</th>
+                    <th>Adder Value RTU Actual</th>
+                    <th>RTU Actual w/o Adder</th>
                     <th>Utilization (%)</th>
                     <th>RTU/TS</th>
                   </tr>
@@ -141,12 +141,12 @@
                   @for (r of measureDetailRows(c.rtuRows, true); track r.label) {
                     <tr>
                       <td>{{ r.label }}</td>
-                      <td>{{ r.baseDemand }}</td>
-                      <td>{{ r.adderDemand }}</td>
                       <td>{{ r.demandWithAdder }}</td>
-                      <td>{{ r.baseActual }}</td>
-                      <td>{{ r.changeActual }}</td>
+                      <td>{{ r.adderDemand }}</td>
+                      <td>{{ r.baseDemand }}</td>
                       <td>{{ r.actualWithAdder }}</td>
+                      <td>{{ r.changeActual }}</td>
+                      <td>{{ r.baseActual }}</td>
                       <td>{{ r.utilization }}</td>
                       <td>{{ r.rtuTs }}</td>
                     </tr>
