@@ -213,6 +213,16 @@ export class ServiceBundle implements OnInit {
     return longest.map((p) => p.label);
   }
 
+  /** Annual (FY-only) rows have no quarter suffix; flag them as a quarterly average. */
+  protected qtrAvgLabel(label: string): string {
+    return label.includes(' ') ? label : `${label} Qtr. Avg`;
+  }
+
+  /** Chart x-axis labels with the "Qtr. Avg" suffix on annual rows (RTU/Cost). */
+  protected comboLabelsAvg(demand: ChartPoint[], actual: ChartPoint[]): string[] {
+    return this.comboLabels(demand, actual).map((l) => this.qtrAvgLabel(l));
+  }
+
   /** True when the "All" (aggregate) tab is active, false for a single location. */
   private isAllTab(): boolean {
     const tab = this.tabs().find((t) => t.id === this.activeTab());
@@ -251,6 +261,7 @@ export class ServiceBundle implements OnInit {
   protected comboRows(
     demand: ChartPoint[],
     actual: ChartPoint[],
+    qtrAvg = false,
   ): { label: string; demand: number; actual: number; utilization: number }[] {
     const labels = this.comboLabels(demand, actual);
     const find = (pts: ChartPoint[], l: string) =>
@@ -260,7 +271,7 @@ export class ServiceBundle implements OnInit {
       const a = find(actual, l);
       const util = d !== 0 ? (a / d) * 100 : 0;
       return {
-        label: l,
+        label: qtrAvg ? this.qtrAvgLabel(l) : l,
         demand: this.roundForTab(d),
         actual: this.roundForTab(a),
         utilization: this.roundForTab(util),
@@ -274,13 +285,13 @@ export class ServiceBundle implements OnInit {
   }
 
   /** Detailed TS/RTU rows (location tabs): base, adder, with-adder, actual, utilization. */
-  protected measureDetailRows(rows: MeasureBreakdownRow[] | undefined): MeasureDetailRow[] {
+  protected measureDetailRows(rows: MeasureBreakdownRow[] | undefined, qtrAvg = false): MeasureDetailRow[] {
     return (rows ?? []).map((r) => {
       const demandWithAdder = r.baseDemand + r.adderDemand;
       const actualWithAdder = r.baseActual + r.changeActual;
       const util = demandWithAdder !== 0 ? (actualWithAdder / demandWithAdder) * 100 : 0;
       const row: MeasureDetailRow = {
-        label: r.label,
+        label: qtrAvg ? this.qtrAvgLabel(r.label) : r.label,
         baseDemand: this.roundForTab(r.baseDemand),
         adderDemand: this.roundForTab(r.adderDemand),
         demandWithAdder: this.roundForTab(demandWithAdder),
@@ -308,7 +319,7 @@ export class ServiceBundle implements OnInit {
           ? null
           : this.round2(actualWithAdder / demandWithAdder - 1);
       return {
-        label: r.label,
+        label: this.qtrAvgLabel(r.label),
         rfcWoDemand: this.roundForTab(r.rfcWoDemand),
         depreciation: this.roundForTab(r.depreciation),
         adderDemand: this.roundForTab(r.adderDemand),

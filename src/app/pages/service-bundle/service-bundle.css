@@ -147,12 +147,12 @@
 .sb-table td {
   border: 1px solid #e3e5e8;
   padding: 0.35rem 0.75rem;
-  text-align: right;
+  text-align: center;
 }
 
 .sb-table th:first-child,
 .sb-table td:first-child {
-  text-align: left;
+  text-align: center;
 }
 
 .sb-table thead th {

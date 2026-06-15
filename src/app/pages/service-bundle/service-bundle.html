@@ -64,6 +64,7 @@
             <figure class="sb-chart">
               <app-chart-canvas
                 type="bar"
+                [yAxisLabel]="'TSpM'"
                 [labels]="comboLabels(c.tsDemand, c.tsActual)"
                 [datasets]="comboDatasets(c.tsDemand, c.tsActual, 'Demand TS', 'Actual TS', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
@@ -117,7 +118,8 @@
             <figure class="sb-chart">
               <app-chart-canvas
                 type="bar"
-                [labels]="comboLabels(c.rtuDemand, c.rtuActual)"
+                [yAxisLabel]="'RTU'"
+                [labels]="comboLabelsAvg(c.rtuDemand, c.rtuActual)"
                 [datasets]="comboDatasets(c.rtuDemand, c.rtuActual, 'Demand RTU', 'Actual RTU', '#aec067', '#5ea290')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
@@ -136,7 +138,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of measureDetailRows(c.rtuRows); track r.label) {
+                  @for (r of measureDetailRows(c.rtuRows, true); track r.label) {
                     <tr>
                       <td>{{ r.label }}</td>
                       <td>{{ r.baseDemand }}</td>
@@ -157,7 +159,7 @@
                   <tr><th>FY Quarter</th><th>RTU RFC Demand</th><th>RTU Actual</th><th>Utilization (%)</th></tr>
                 </thead>
                 <tbody>
-                  @for (r of comboRows(c.rtuDemand, c.rtuActual); track r.label) {
+                  @for (r of comboRows(c.rtuDemand, c.rtuActual, true); track r.label) {
                     <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.utilization }}</td></tr>
                   }
                 </tbody>
@@ -172,7 +174,8 @@
             <figure class="sb-chart">
               <app-chart-canvas
                 type="bar"
-                [labels]="comboLabels(c.costDemand, c.costActual)"
+                [yAxisLabel]="'k EUR'"
+                [labels]="comboLabelsAvg(c.costDemand, c.costActual)"
                 [datasets]="comboDatasets(c.costDemand, c.costActual, 'Demand Cost', 'Actual Cost', '#f5c631', '#928285')"></app-chart-canvas>
             </figure>
             @if (showDetail()) {
@@ -214,7 +217,7 @@
                   <tr><th>FY Quarter</th><th>Cost RFC Demand</th><th>Cost Actual</th></tr>
                 </thead>
                 <tbody>
-                  @for (r of comboRows(c.costDemand, c.costActual); track r.label) {
+                  @for (r of comboRows(c.costDemand, c.costActual, true); track r.label) {
                     <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
                   }
                 </tbody>

@@ -39,6 +39,8 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
   @Input() color = '#0a8276';
   /** Optional multi-series data. When set, `data`/`label`/`color` are ignored. */
   @Input() datasets?: ChartSeries[];
+  /** Optional left y-axis title (e.g. 'TSpM', 'RTU', 'k EUR'). */
+  @Input() yAxisLabel = '';
 
   @ViewChild('canvas') private canvasRef!: ElementRef<HTMLCanvasElement>;
 
@@ -151,11 +153,17 @@ export class ChartCanvas implements AfterViewInit, OnChanges, OnDestroy {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: showLegend },
+          legend: { display: showLegend, position: 'bottom' },
         },
         scales: {
           x: { grid: { display: false } },
-          y: { beginAtZero: true, position: 'left', display: true, grid: { display: true } },
+          y: {
+            beginAtZero: true,
+            position: 'left',
+            display: true,
+            grid: { display: true },
+            title: { display: !!this.yAxisLabel, text: this.yAxisLabel },
+          },
           ...(useSecondAxis
             ? {
                 y1: {
