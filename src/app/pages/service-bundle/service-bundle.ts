@@ -159,23 +159,19 @@ export class ServiceBundle implements OnInit {
 
   private buildTabs(d: ServiceBundleDashboard): void {
     this.sbName.set(d.sbName ?? '');
-    const isTestfloor = (d.sbName ?? '').toLowerCase().includes('testfloor');
-    const valid = d.validLocations;
-    const show = (loc: string) => !valid || valid.includes(loc);
     const tabs: ChartTab[] = [{ id: 'All', label: 'All', loc: '' }];
 
-    if (show('RPT CENTRAL')) {
-      tabs.push({ id: 'RPTCENTRAL', label: 'RPT Central', loc: 'RPT CENTRAL' });
-    }
-    if (!isTestfloor && show('RPT MUC ESD')) {
-      tabs.push({ id: 'RPTMUCESD', label: 'RPT MUC ESD', loc: 'RPT MUC ESD' });
-    }
+    // The backend returns the ordered, data-driven list of location tabs
+    // (RPT CENTRAL + mapped labs + any RPT location with actuals). Fall back to
+    // the mapped labs only if the backend didn't supply it.
+    const locs =
+      d.validLocations && d.validLocations.length
+        ? d.validLocations
+        : (d.labs ?? []).map((l) => l.text).filter((t): t is string => !!t);
 
-    for (const lab of d.labs ?? []) {
-      if (!lab.text || !show(lab.text)) {
-        continue;
-      }
-      tabs.push({ id: lab.value || lab.text, label: lab.text, loc: lab.text });
+    for (const loc of locs) {
+      const label = loc === 'RPT CENTRAL' ? 'RPT Central' : loc;
+      tabs.push({ id: loc.replace(/\s+/g, ''), label, loc });
     }
 
     this.tabs.set(tabs);
