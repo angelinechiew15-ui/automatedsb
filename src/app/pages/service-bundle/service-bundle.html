@@ -99,7 +99,7 @@
             } @else {
               <table class="sb-table sb-head-ts">
                 <thead>
-                  <tr><th>FY Quarter</th><th>Demand TS</th><th>Actual TS</th><th>Utilization (%)</th></tr>
+                  <tr><th>FY Quarter</th><th>TSpM RFC Demand</th><th>TSpM Actual</th><th>Utilization (%)</th></tr>
                 </thead>
                 <tbody>
                   @for (r of comboRows(c.tsDemand, c.tsActual); track r.label) {
@@ -154,7 +154,7 @@
             } @else {
               <table class="sb-table sb-head-rtu">
                 <thead>
-                  <tr><th>FY Quarter</th><th>Demand RTU</th><th>Actual RTU</th><th>Utilization (%)</th></tr>
+                  <tr><th>FY Quarter</th><th>RTU RFC Demand</th><th>RTU Actual</th><th>Utilization (%)</th></tr>
                 </thead>
                 <tbody>
                   @for (r of comboRows(c.rtuDemand, c.rtuActual); track r.label) {
@@ -211,7 +211,7 @@
             } @else {
               <table class="sb-table sb-head-cost">
                 <thead>
-                  <tr><th>FY Quarter</th><th>Demand Cost</th><th>Actual Cost</th></tr>
+                  <tr><th>FY Quarter</th><th>Cost RFC Demand</th><th>Cost Actual</th></tr>
                 </thead>
                 <tbody>
                   @for (r of comboRows(c.costDemand, c.costActual); track r.label) {
