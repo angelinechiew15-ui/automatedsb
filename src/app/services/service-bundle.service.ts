@@ -112,6 +112,13 @@ export interface LabSummaryRow {
   costActual:    number | null;
 }
 
+/** Distinct filter option values for the Lab Summary dropdowns. */
+export interface LabSummaryFilterOptions {
+  fyQuarters: string[];
+  locations:  string[];
+  sbs:        string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);
@@ -181,5 +188,11 @@ export class ServiceBundleService {
   getLabSummary(horizon: string): Observable<LabSummaryRow[]> {
     const params = new HttpParams().set('horizon', horizon);
     return this.http.get<LabSummaryRow[]>(`${this.base}/lab-summary`, { params });
+  }
+
+  /** Distinct FY Quarter, Location, SB values for the Lab Summary filter dropdowns. */
+  getLabSummaryFilterOptions(horizon: string): Observable<LabSummaryFilterOptions> {
+    const params = new HttpParams().set('horizon', horizon);
+    return this.http.get<LabSummaryFilterOptions>(`${this.base}/lab-summary/filter-options`, { params });
   }
 }

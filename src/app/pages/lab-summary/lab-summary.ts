@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
-import { LabSummaryRow, LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
+import { LabSummaryFilterOptions, LabSummaryRow, LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
 
 /** The 15 measure columns — defines order and labels for both headers and export. */
 const MEASURES: { key: keyof LabSummaryRow; label: string }[] = [
@@ -235,6 +235,7 @@ export class LabSummary implements OnInit {
 
   protected readonly horizons = signal<LookupItem[]>([]);
   private  readonly allRows   = signal<LabSummaryRow[]>([]);
+  private  readonly preloadedOptions = signal<LabSummaryFilterOptions>({ fyQuarters: [], locations: [], sbs: [] });
   protected readonly loading  = signal(false);
   protected readonly error    = signal<string | null>(null);
 
@@ -249,17 +250,23 @@ export class LabSummary implements OnInit {
   // ── Filter options ──────────────────────────────────────────────────────────
 
   protected readonly fyQuarterOptions = computed((): string[] =>
-    [...new Set(this.allRows().map(r => r.fyQuarter).filter(Boolean))].sort()
+    this.allRows().length
+      ? [...new Set(this.allRows().map(r => r.fyQuarter).filter(Boolean))].sort()
+      : this.preloadedOptions().fyQuarters
   );
 
   protected readonly hasData = computed(() => this.allRows().length > 0);
 
   protected readonly locOptions = computed((): string[] =>
-    [...new Set(this.allRows().map(r => r.location).filter(Boolean))].sort()
+    this.allRows().length
+      ? [...new Set(this.allRows().map(r => r.location).filter(Boolean))].sort()
+      : this.preloadedOptions().locations
   );
 
   protected readonly sbOptions = computed((): string[] =>
-    [...new Set(this.allRows().map(r => r.sb).filter(Boolean))].sort()
+    this.allRows().length
+      ? [...new Set(this.allRows().map(r => r.sb).filter(Boolean))].sort()
+      : this.preloadedOptions().sbs
   );
 
   // ── Active column locations (respects Location filter) ─────────────────────
@@ -382,9 +389,16 @@ export class LabSummary implements OnInit {
         this.horizons.set(data);
         if (data.length) {
           this.selectedHorizon.set(data[0].value);
+          this.loadFilterOptions(data[0].value);
         }
       },
       error: () => this.error.set('Failed to load horizons.'),
+    });
+  }
+
+  private loadFilterOptions(horizon: string): void {
+    this.api.getLabSummaryFilterOptions(horizon).subscribe({
+      next: (opts) => this.preloadedOptions.set(opts),
     });
   }
 
@@ -394,6 +408,8 @@ export class LabSummary implements OnInit {
     this.selectedLoc.set('');
     this.selectedFyQuarter.set('');
     this.allRows.set([]);
+    this.preloadedOptions.set({ fyQuarters: [], locations: [], sbs: [] });
+    if (value) { this.loadFilterOptions(value); }
   }
 
   protected refresh(): void {
