@@ -68,7 +68,8 @@
               "buildTarget": "automatedsb:build:production"
             },
             "development": {
-              "buildTarget": "automatedsb:build:development"
+              "buildTarget": "automatedsb:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

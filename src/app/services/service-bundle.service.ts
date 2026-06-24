@@ -68,6 +68,14 @@ export interface ServiceBundleCharts {
   costRows: CostBreakdownRow[];
 }
 
+/** A row of quarterly-average lab cost data from v_db_asb_data. */
+export interface LabCostRow {
+  location: string;
+  sb: string;
+  fy: string;
+  value: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);
@@ -121,5 +129,14 @@ export class ServiceBundleService {
       params = params.set('loc', loc);
     }
     return this.http.get<ServiceBundleCharts>(`${this.base}/service-bundle/charts`, { params });
+  }
+
+  /**
+   * Quarterly-average lab cost per SB per fiscal year for a given horizon.
+   * Sourced from v_db_asb_data.
+   */
+  getLabCostQtrAvg(horizon: string): Observable<LabCostRow[]> {
+    const params = new HttpParams().set('horizon', horizon);
+    return this.http.get<LabCostRow[]>(`${this.base}/lab-cost/qtr-avg`, { params });
   }
 }
