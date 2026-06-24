@@ -89,6 +89,29 @@ export interface LabCostRow {
   value: number | null;
 }
 
+/** One row per (fyQuarter, location, horizon, sb) from the Lab Summary endpoint. */
+export interface LabSummaryRow {
+  fyQuarter:     string;
+  location:      string;
+  horizon:       string;
+  sb:            string;
+  tsDemand:      number | null;
+  adderTs:       number | null;
+  tsActual:      number | null;
+  changeTs:      number | null;
+  rtuRfcDemand:  number | null;
+  adderRtu:      number | null;
+  rtuTs:         number | null;
+  rtuActual:     number | null;
+  changeRtu:     number | null;
+  costRfcWoDepr: number | null;
+  depreciation:  number | null;
+  costRfcDemand: number | null;
+  adderCost:     number | null;
+  costRtu:       number | null;
+  costActual:    number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);
@@ -152,5 +175,11 @@ export class ServiceBundleService {
   getLabCostQtrAvg(horizon: string): Observable<LabCostRow[]> {
     const params = new HttpParams().set('horizon', horizon);
     return this.http.get<LabCostRow[]>(`${this.base}/lab-cost/qtr-avg`, { params });
+  }
+
+  /** All TS/RTU/Cost measures per (fyQuarter, location, horizon, sb) for the Lab Summary tab. */
+  getLabSummary(horizon: string): Observable<LabSummaryRow[]> {
+    const params = new HttpParams().set('horizon', horizon);
+    return this.http.get<LabSummaryRow[]>(`${this.base}/lab-summary`, { params });
   }
 }
