@@ -68,10 +68,23 @@ export interface ServiceBundleCharts {
   costRows: CostBreakdownRow[];
 }
 
-/** A row of quarterly-average lab cost data from v_db_asb_data. */
+/** A row of quarterly-average lab cost data from v_sb_asb_data.
+ *
+ *  cost value = COALESCE(rfcwodemand,0) + COALESCE(depreciation,0) + COALESCE(adderdemand,0)
+ *  (mirrors the Tableau calc: ZN([Cost RFC w/o Depreciation]) + ZN([Depreciation]) + ZN([Adder Value Cost Demand]))
+ *
+ *  Backend query shape:
+ *    SELECT rptloc AS location, sb, fy,
+ *           AVG(COALESCE(rfcwodemand,0) + COALESCE(depreciation,0) + COALESCE(adderdemand,0)) AS value
+ *    FROM   v_sb_asb_data
+ *    WHERE  horizon = @horizon
+ *    GROUP  BY rptloc, sb, fy
+ *    ORDER  BY rptloc, sb, fy
+ */
 export interface LabCostRow {
   location: string;
   sb: string;
+  sbname: string;
   fy: string;
   value: number | null;
 }
@@ -133,7 +146,8 @@ export class ServiceBundleService {
 
   /**
    * Quarterly-average lab cost per SB per fiscal year for a given horizon.
-   * Sourced from v_db_asb_data.
+   * Sourced from v_sb_asb_data.
+   * Cost = COALESCE(rfcwodemand,0) + COALESCE(depreciation,0) + COALESCE(adderdemand,0)
    */
   getLabCostQtrAvg(horizon: string): Observable<LabCostRow[]> {
     const params = new HttpParams().set('horizon', horizon);

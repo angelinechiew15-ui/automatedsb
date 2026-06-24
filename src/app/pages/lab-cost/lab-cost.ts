@@ -162,7 +162,18 @@ export class LabCost implements OnInit {
   private readonly adminApi = inject(AdminService);
 
   protected readonly horizons = signal<LookupItem[]>([]);
-  protected readonly sbOptions = signal<LookupItem[]>([]);
+  /** Populated from data once loaded — avoids the cm_matrix_sb ID vs v_sb_asb_data name mismatch. */
+  protected readonly sbOptions = computed((): LookupItem[] => {
+    const seen = new Set<string>();
+    const result: LookupItem[] = [];
+    for (const r of this.allRows()) {
+      if (!seen.has(r.sb)) {
+        seen.add(r.sb);
+        result.push({ value: r.sb, text: r.sbname || r.sb });
+      }
+    }
+    return result.sort((a, b) => a.text.localeCompare(b.text));
+  });
   protected readonly locOptions = signal<string[]>([]);
   private readonly allRows = signal<LabCostRow[]>([]);
   protected readonly loading = signal(false);
@@ -184,7 +195,6 @@ export class LabCost implements OnInit {
   protected readonly pivotRows = computed((): PivotRow[] => {
     const sb = this.selectedSb();
     const loc = this.selectedLoc();
-    const sbMap = new Map(this.sbOptions().map((o) => [o.value, o.text]));
     const filtered = this.allRows().filter(
       (r) => (!sb || r.sb === sb) && (!loc || r.location === loc)
     );
@@ -196,7 +206,7 @@ export class LabCost implements OnInit {
         map.set(key, {
           location: r.location,
           sb: r.sb,
-          sbname: sbMap.get(r.sb) ?? r.sb,
+          sbname: r.sbname || r.sb,
           values: {},
         });
       }
@@ -218,21 +228,6 @@ export class LabCost implements OnInit {
         }
       },
       error: () => this.error.set('Failed to load horizons.'),
-    });
-
-    this.adminApi.listSb().subscribe({
-      next: (rows) => {
-        const seen = new Set<string>();
-        const sbs: LookupItem[] = [];
-        for (const r of rows.sort((a, b) => a.sbname.localeCompare(b.sbname))) {
-          if (!seen.has(r.sb)) {
-            seen.add(r.sb);
-            sbs.push({ value: r.sb, text: r.sbname });
-          }
-        }
-        this.sbOptions.set(sbs);
-      },
-      error: () => {}, // non-critical: dropdown stays empty
     });
 
     this.adminApi.listSbol().subscribe({
