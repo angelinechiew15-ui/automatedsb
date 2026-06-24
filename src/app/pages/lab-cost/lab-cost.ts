@@ -7,7 +7,7 @@ import {
   LookupItem,
   ServiceBundleService,
 } from '../../services/service-bundle.service';
-import { AdminService } from '../../services/admin.service';
+
 
 /** A pivoted display row: one row per Location+SB, with a value per FY column. */
 interface PivotRow {
@@ -215,7 +215,6 @@ interface PivotRow {
 })
 export class LabCost implements OnInit {
   private readonly api = inject(ServiceBundleService);
-  private readonly adminApi = inject(AdminService);
 
   protected readonly horizons = signal<LookupItem[]>([]);
   /** Populated from data once loaded — avoids the cm_matrix_sb ID vs v_sb_asb_data name mismatch. */
@@ -230,7 +229,10 @@ export class LabCost implements OnInit {
     }
     return result.sort((a, b) => a.text.localeCompare(b.text));
   });
-  protected readonly locOptions = signal<string[]>([]);
+  /** Derived from data rows so every location in the data is available as a filter option. */
+  protected readonly locOptions = computed((): string[] =>
+    [...new Set(this.allRows().map((r) => r.location).filter(Boolean))].sort()
+  );
   private readonly allRows = signal<LabCostRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -334,13 +336,7 @@ export class LabCost implements OnInit {
       error: () => this.error.set('Failed to load horizons.'),
     });
 
-    this.adminApi.listSbol().subscribe({
-      next: (rows) => {
-        const locs = [...new Set(rows.map((r) => r.rptloc).filter(Boolean))].sort();
-        this.locOptions.set(locs);
-      },
-      error: () => {}, // non-critical: dropdown stays empty
-    });
+    // locOptions is now derived from data rows via computed() — no separate API call needed.
   }
 
   protected onHorizonChange(value: string): void {
