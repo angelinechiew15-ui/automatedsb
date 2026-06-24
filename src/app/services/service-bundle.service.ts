@@ -190,9 +190,8 @@ export class ServiceBundleService {
     return this.http.get<LabSummaryRow[]>(`${this.base}/lab-summary`, { params });
   }
 
-  /** Distinct FY Quarter, Location, SB values for the Lab Summary filter dropdowns. */
-  getLabSummaryFilterOptions(horizon: string): Observable<LabSummaryFilterOptions> {
-    const params = new HttpParams().set('horizon', horizon);
-    return this.http.get<LabSummaryFilterOptions>(`${this.base}/lab-summary/filter-options`, { params });
+  /** Distinct FY Quarter, Location, SB values for the Lab Summary filter dropdowns (all horizons). */
+  getLabSummaryFilterOptions(): Observable<LabSummaryFilterOptions> {
+    return this.http.get<LabSummaryFilterOptions>(`${this.base}/lab-summary/filter-options`);
   }
 }

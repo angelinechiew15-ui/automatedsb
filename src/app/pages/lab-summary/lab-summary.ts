@@ -384,20 +384,21 @@ export class LabSummary implements OnInit {
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    // Load horizons and filter options together on tab open — once only
     this.api.listHorizons().subscribe({
       next: (data) => {
         this.horizons.set(data);
         if (data.length) {
           this.selectedHorizon.set(data[0].value);
-          this.loadFilterOptions(data[0].value);
         }
       },
       error: () => this.error.set('Failed to load horizons.'),
     });
+    this.loadFilterOptions();
   }
 
-  private loadFilterOptions(horizon: string): void {
-    this.api.getLabSummaryFilterOptions(horizon).subscribe({
+  private loadFilterOptions(): void {
+    this.api.getLabSummaryFilterOptions().subscribe({
       next: (opts) => this.preloadedOptions.set(opts),
     });
   }
@@ -408,8 +409,6 @@ export class LabSummary implements OnInit {
     this.selectedLoc.set('');
     this.selectedFyQuarter.set('');
     this.allRows.set([]);
-    this.preloadedOptions.set({ fyQuarters: [], locations: [], sbs: [] });
-    if (value) { this.loadFilterOptions(value); }
   }
 
   protected refresh(): void {
