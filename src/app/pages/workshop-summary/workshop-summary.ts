@@ -49,8 +49,6 @@ import { LookupItem, ServiceBundleService } from '../../services/service-bundle.
                 <th class="col-status">SB Status</th>
                 <th class="col-summary">Summary</th>
                 <th class="col-text">Comment</th>
-                <th class="col-text">Demand Driver</th>
-                <th class="col-text">Cost Driver</th>
                 <th class="col-num">TSpM Demand</th>
                 <th class="col-num">RTU Demand</th>
                 <th class="col-num">Cost Demand</th>
@@ -69,8 +67,6 @@ import { LookupItem, ServiceBundleService } from '../../services/service-bundle.
                   </td>
                   <td class="col-summary">{{ row.summary }}</td>
                   <td class="col-text">{{ row.comment }}</td>
-                  <td class="col-text">{{ row.demandDriver }}</td>
-                  <td class="col-text">{{ row.costDriver }}</td>
                   <td class="col-num">{{ row.tsDemand != null ? (row.tsDemand | number:'1.0-2') : '\u2014' }}</td>
                   <td class="col-num">{{ row.rtuDemand != null ? (row.rtuDemand | number:'1.0-2') : '\u2014' }}</td>
                   <td class="col-num">{{ row.costDemand != null ? (row.costDemand | number:'1.0-2') : '\u2014' }}</td>

@@ -68,17 +68,15 @@ export interface WorkshopSummaryRow {
 }
 
 export interface WorkshopSbStatusRow {
-  divName:      string;
-  subDiv:       string;
-  sb:           string;
-  sbStatus:     string;
-  comment:      string;
-  demandDriver: string;
-  costDriver:   string;
-  summary:      string;
-  tsDemand:     number | null;
-  rtuDemand:    number | null;
-  costDemand:   number | null;
+  divName:   string;
+  subDiv:    string;
+  sb:        string;
+  sbStatus:  string;
+  comment:   string;
+  summary:   string;
+  tsDemand:  number | null;
+  rtuDemand: number | null;
+  costDemand: number | null;
 }
 export interface LookupItem {
   value: string;
