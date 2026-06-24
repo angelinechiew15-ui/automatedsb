@@ -52,8 +52,9 @@ interface PivotRow {
 
         <div class="field">
           <label>FY Quarter</label>
-          <select [ngModel]="selectedFyQuarter()" (ngModelChange)="selectedFyQuarter.set($event)">
-            <option value="">All</option>
+          <select [ngModel]="selectedFyQuarter()" (ngModelChange)="selectedFyQuarter.set($event)"
+                  [disabled]="!hasData()">
+            <option value="">{{ hasData() ? 'All' : 'Load data first' }}</option>
             @for (q of fyQuarterOptions(); track q) {
               <option [value]="q">{{ q }}</option>
             }
@@ -62,8 +63,9 @@ interface PivotRow {
 
         <div class="field">
           <label>Location</label>
-          <select [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)">
-            <option value="">All</option>
+          <select [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)"
+                  [disabled]="!hasData()">
+            <option value="">{{ hasData() ? 'All' : 'Load data first' }}</option>
             @for (loc of locOptions(); track loc) {
               <option [value]="loc">{{ loc }}</option>
             }
@@ -72,8 +74,9 @@ interface PivotRow {
 
         <div class="field">
           <label>Service Bundle</label>
-          <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
-            <option value="">All</option>
+          <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)"
+                  [disabled]="!hasData()">
+            <option value="">{{ hasData() ? 'All' : 'Load data first' }}</option>
             @for (sb of sbOptions(); track sb) {
               <option [value]="sb">{{ sb }}</option>
             }
@@ -251,6 +254,8 @@ export class LabSummary implements OnInit {
   protected readonly fyQuarterOptions = computed((): string[] =>
     [...new Set(this.allRows().map(r => r.fyQuarter).filter(Boolean))].sort()
   );
+
+  protected readonly hasData = computed(() => this.allRows().length > 0);
 
   protected readonly locOptions = computed((): string[] =>
     [...new Set(this.allRows().map(r => r.location).filter(Boolean))].sort()
