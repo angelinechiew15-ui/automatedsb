@@ -66,6 +66,20 @@ export interface WorkshopSummaryRow {
   sb: string;
   rtuts: string;
 }
+
+export interface WorkshopSbStatusRow {
+  divName:      string;
+  subDiv:       string;
+  sb:           string;
+  sbStatus:     string;
+  comment:      string;
+  demandDriver: string;
+  costDriver:   string;
+  summary:      string;
+  tsDemand:     number | null;
+  rtuDemand:    number | null;
+  costDemand:   number | null;
+}
 export interface LookupItem {
   value: string;
   text: string;
@@ -203,6 +217,12 @@ export class AdminService {
   // Workshop Summary (from v_sb_asb_data)
   listWorkshopSummary(): Observable<WorkshopSummaryRow[]> {
     return this.http.get<WorkshopSummaryRow[]>(`${this.base}/workshop-summary`);
+  }
+
+  // Workshop SB Status table
+  getWorkshopSbStatus(horizon: string): Observable<WorkshopSbStatusRow[]> {
+    const params = new HttpParams().set('horizon', horizon);
+    return this.http.get<WorkshopSbStatusRow[]>(`${this.base}/workshop-summary/sb-status`, { params });
   }
 
   // ORM Summary
