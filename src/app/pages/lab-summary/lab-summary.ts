@@ -359,7 +359,6 @@ export class LabSummary implements OnInit {
         this.horizons.set(data);
         if (data.length) {
           this.selectedHorizon.set(data[0].value);
-          this.loadData();
         }
       },
       error: () => this.error.set('Failed to load horizons.'),
