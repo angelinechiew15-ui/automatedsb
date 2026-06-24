@@ -12,6 +12,7 @@ import { AdminService } from '../../services/admin.service';
 interface PivotRow {
   location: string;
   sb: string;
+  sbname: string;
   values: Record<string, number | null>;
 }
 
@@ -39,8 +40,8 @@ interface PivotRow {
           SB
           <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
             <option value="">All</option>
-            @for (sb of sbOptions(); track sb) {
-              <option [value]="sb">{{ sb }}</option>
+            @for (sb of sbOptions(); track sb.value) {
+              <option [value]="sb.value">{{ sb.text }}</option>
             }
           </select>
         </label>
@@ -80,7 +81,7 @@ interface PivotRow {
               @for (row of pivotRows(); track row.location + '|' + row.sb) {
                 <tr>
                   <td>{{ row.location }}</td>
-                  <td>{{ row.sb }}</td>
+                  <td>{{ row.sbname }}</td>
                   @for (fy of fyColumns(); track fy) {
                     <td class="num">
                       {{ row.values[fy] != null ? (row.values[fy] | number:'1.0-2') : '\u2014' }}
@@ -161,7 +162,7 @@ export class LabCost implements OnInit {
   private readonly adminApi = inject(AdminService);
 
   protected readonly horizons = signal<LookupItem[]>([]);
-  protected readonly sbOptions = signal<string[]>([]);
+  protected readonly sbOptions = signal<LookupItem[]>([]);
   protected readonly locOptions = signal<string[]>([]);
   private readonly allRows = signal<LabCostRow[]>([]);
   protected readonly loading = signal(false);
@@ -183,6 +184,7 @@ export class LabCost implements OnInit {
   protected readonly pivotRows = computed((): PivotRow[] => {
     const sb = this.selectedSb();
     const loc = this.selectedLoc();
+    const sbMap = new Map(this.sbOptions().map((o) => [o.value, o.text]));
     const filtered = this.allRows().filter(
       (r) => (!sb || r.sb === sb) && (!loc || r.location === loc)
     );
@@ -191,12 +193,17 @@ export class LabCost implements OnInit {
     for (const r of filtered) {
       const key = `${r.location}||${r.sb}`;
       if (!map.has(key)) {
-        map.set(key, { location: r.location, sb: r.sb, values: {} });
+        map.set(key, {
+          location: r.location,
+          sb: r.sb,
+          sbname: sbMap.get(r.sb) ?? r.sb,
+          values: {},
+        });
       }
       map.get(key)!.values[r.fy] = r.value;
     }
     return [...map.values()].sort((a, b) =>
-      a.location.localeCompare(b.location) || a.sb.localeCompare(b.sb)
+      a.location.localeCompare(b.location) || a.sbname.localeCompare(b.sbname)
     );
   });
 
@@ -215,7 +222,14 @@ export class LabCost implements OnInit {
 
     this.adminApi.listSb().subscribe({
       next: (rows) => {
-        const sbs = [...new Set(rows.map((r) => r.sb))].sort();
+        const seen = new Set<string>();
+        const sbs: LookupItem[] = [];
+        for (const r of rows.sort((a, b) => a.sbname.localeCompare(b.sbname))) {
+          if (!seen.has(r.sb)) {
+            seen.add(r.sb);
+            sbs.push({ value: r.sb, text: r.sbname });
+          }
+        }
         this.sbOptions.set(sbs);
       },
       error: () => {}, // non-critical: dropdown stays empty
