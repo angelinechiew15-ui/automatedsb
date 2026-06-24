@@ -70,7 +70,10 @@ interface PivotRow {
           </select>
         </div>
 
-        <div class="field" style="justify-content: flex-end;">
+        <div class="field" style="justify-content: flex-end; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
+          <button class="btn-refresh" (click)="refresh()" [disabled]="!selectedHorizon() || loading()">
+            &#8635; Refresh
+          </button>
           <button class="btn-export" (click)="exportToExcel()" [disabled]="pivotRows().length === 0">
             &#128190; Export to Excel
           </button>
@@ -161,6 +164,14 @@ interface PivotRow {
       background: #ab377a; color: #fff; white-space: nowrap;
     }
     .btn-export:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-refresh {
+      font-family: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem;
+      border-radius: 5px; border: 1px solid #ab377a; cursor: pointer;
+      background: #fff; color: #ab377a; white-space: nowrap;
+    }
+    .btn-refresh:hover:not(:disabled) { background: #f9eef5; }
+    .btn-refresh:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .status { margin-top: 0.75rem; }
     .status-error { color: #b00020; }
@@ -359,10 +370,12 @@ export class LabSummary implements OnInit {
     this.selectedHorizon.set(value);
     this.selectedSb.set('');
     this.selectedLoc.set('');
-    if (value) {
+    this.allRows.set([]);
+  }
+
+  protected refresh(): void {
+    if (this.selectedHorizon()) {
       this.loadData();
-    } else {
-      this.allRows.set([]);
     }
   }
 
