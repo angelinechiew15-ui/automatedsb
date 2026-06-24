@@ -229,10 +229,13 @@ export class LabCost implements OnInit {
     }
     return result.sort((a, b) => a.text.localeCompare(b.text));
   });
-  /** Derived from data rows so every location in the data is available as a filter option. */
-  protected readonly locOptions = computed((): string[] =>
-    [...new Set(this.allRows().map((r) => r.location).filter(Boolean))].sort()
-  );
+  /** Only locations that have at least one non-null cost value. */
+  protected readonly locOptions = computed((): string[] => {
+    const withValue = new Set(
+      this.allRows().filter((r) => r.value != null).map((r) => r.location).filter(Boolean)
+    );
+    return [...withValue].sort();
+  });
   private readonly allRows = signal<LabCostRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -274,9 +277,10 @@ export class LabCost implements OnInit {
       }
       map.get(key)!.values[r.fy] = r.value;
     }
-    return [...map.values()].sort((a, b) =>
-      a.location.localeCompare(b.location) || a.sbname.localeCompare(b.sbname)
-    );
+    // Exclude rows where every FY value is null (no cost data at all)
+    return [...map.values()]
+      .filter((row) => Object.values(row.values).some((v) => v != null))
+      .sort((a, b) => a.location.localeCompare(b.location) || a.sbname.localeCompare(b.sbname));
   });
 
   /** Pivot rows after applying the current sort column/direction. */
