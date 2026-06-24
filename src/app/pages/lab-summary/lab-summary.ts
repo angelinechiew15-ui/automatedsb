@@ -51,6 +51,16 @@ interface PivotRow {
         </div>
 
         <div class="field">
+          <label>FY Quarter</label>
+          <select [ngModel]="selectedFyQuarter()" (ngModelChange)="selectedFyQuarter.set($event)">
+            <option value="">All</option>
+            @for (q of fyQuarterOptions(); track q) {
+              <option [value]="q">{{ q }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
           <label>Location</label>
           <select [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)">
             <option value="">All</option>
@@ -228,14 +238,19 @@ export class LabSummary implements OnInit {
   protected readonly loading  = signal(false);
   protected readonly error    = signal<string | null>(null);
 
-  protected readonly selectedHorizon = signal('');
-  protected readonly selectedSb      = signal('');
-  protected readonly selectedLoc     = signal('');
+  protected readonly selectedHorizon  = signal('');
+  protected readonly selectedSb       = signal('');
+  protected readonly selectedLoc      = signal('');
+  protected readonly selectedFyQuarter = signal('');
 
   protected readonly sortCol = signal<string>('sb');
   protected readonly sortAsc = signal<boolean>(true);
 
   // ── Filter options ──────────────────────────────────────────────────────────
+
+  protected readonly fyQuarterOptions = computed((): string[] =>
+    [...new Set(this.allRows().map(r => r.fyQuarter).filter(Boolean))].sort()
+  );
 
   protected readonly locOptions = computed((): string[] =>
     [...new Set(this.allRows().map(r => r.location).filter(Boolean))].sort()
@@ -255,9 +270,11 @@ export class LabSummary implements OnInit {
 
   // ── Column structure (3-level headers) ─────────────────────────────────────
 
-  private readonly fyQuarters = computed((): string[] =>
-    [...new Set(this.allRows().map(r => r.fyQuarter))].sort()
-  );
+  private readonly fyQuarters = computed((): string[] => {
+    const sel = this.selectedFyQuarter();
+    const all = [...new Set(this.allRows().map(r => r.fyQuarter))].sort();
+    return sel ? all.filter(q => q === sel) : all;
+  });
 
   protected readonly quarterGroups = computed(() =>
     this.fyQuarters().map(fy => ({
@@ -292,7 +309,11 @@ export class LabSummary implements OnInit {
 
   protected readonly pivotRows = computed((): PivotRow[] => {
     const sbFilter  = this.selectedSb();
-    const filtered  = this.allRows().filter(r => !sbFilter || r.sb === sbFilter);
+    const qFilter   = this.selectedFyQuarter();
+    const filtered  = this.allRows().filter(r =>
+      (!sbFilter || r.sb === sbFilter) &&
+      (!qFilter  || r.fyQuarter === qFilter)
+    );
 
     const map = new Map<string, PivotRow>();
     for (const r of filtered) {
@@ -369,6 +390,7 @@ export class LabSummary implements OnInit {
     this.selectedHorizon.set(value);
     this.selectedSb.set('');
     this.selectedLoc.set('');
+    this.selectedFyQuarter.set('');
     this.allRows.set([]);
   }
 
