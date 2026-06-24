@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import {
   LabCostRow,
   LookupItem,
@@ -23,38 +24,44 @@ interface PivotRow {
   imports: [CommonModule, FormsModule],
   template: `
     <section class="page">
-      <h2>Lab Cost</h2>
+      <h2>Lab Cost Qtr Avg</h2>
 
-      <div class="filters">
-        <label>
-          Horizon
+      <div class="toolbar">
+        <div class="field">
+          <label>Horizon</label>
           <select [ngModel]="selectedHorizon()" (ngModelChange)="onHorizonChange($event)">
             <option value="">-- Select Horizon --</option>
             @for (h of horizons(); track h.value) {
               <option [value]="h.value">{{ h.text }}</option>
             }
           </select>
-        </label>
+        </div>
 
-        <label>
-          SB
-          <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
-            <option value="">All</option>
-            @for (sb of sbOptions(); track sb.value) {
-              <option [value]="sb.value">{{ sb.text }}</option>
-            }
-          </select>
-        </label>
-
-        <label>
-          Location
+        <div class="field">
+          <label>Location</label>
           <select [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)">
             <option value="">All</option>
             @for (loc of locOptions(); track loc) {
               <option [value]="loc">{{ loc }}</option>
             }
           </select>
-        </label>
+        </div>
+
+        <div class="field">
+          <label>Service Bundle</label>
+          <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
+            <option value="">All</option>
+            @for (sb of sbOptions(); track sb.value) {
+              <option [value]="sb.value">{{ sb.text }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field" style="justify-content: flex-end;">
+          <button class="btn-export" (click)="exportToExcel()" [disabled]="pivotRows().length === 0">
+            &#128190; Export to Excel
+          </button>
+        </div>
       </div>
 
       @if (loading()) {
@@ -70,21 +77,27 @@ interface PivotRow {
           <table>
             <thead>
               <tr>
-                <th scope="col">Location</th>
-                <th scope="col">SB</th>
+                <th scope="col" (click)="sort('location')" class="sortable">
+                  Location <span class="sort-icon">{{ sortIcon('location') }}</span>
+                </th>
+                <th scope="col" (click)="sort('sbname')" class="sortable">
+                  Service Bundle <span class="sort-icon">{{ sortIcon('sbname') }}</span>
+                </th>
                 @for (fy of fyColumns(); track fy) {
-                  <th scope="col" class="num-h">{{ fy }}</th>
+                  <th scope="col" class="num-h sortable" (click)="sort(fy)">
+                    {{ fy }} <span class="sort-icon">{{ sortIcon(fy) }}</span>
+                  </th>
                 }
               </tr>
             </thead>
             <tbody>
-              @for (row of pivotRows(); track row.location + '|' + row.sb) {
+              @for (row of sortedPivotRows(); track row.location + '|' + row.sb) {
                 <tr>
                   <td>{{ row.location }}</td>
                   <td>{{ row.sbname }}</td>
                   @for (fy of fyColumns(); track fy) {
                     <td class="num">
-                      {{ row.values[fy] != null ? (row.values[fy] | number:'1.0-2') : '\u2014' }}
+                      {{ row.values[fy] != null ? (row.values[fy] | number:'1.0-0') : '\u2014' }}
                     </td>
                   }
                 </tr>
@@ -96,28 +109,61 @@ interface PivotRow {
     </section>
   `,
   styles: [`
-    .page { padding: 1.5rem 1.5rem 1.5rem 3rem; }
+    .page {
+      padding: 1.5rem 1.5rem 1.5rem 3rem;
+      font-family: 'Source Sans Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.92rem;
+      color: #1f2937;
+    }
 
-    .filters {
+    .page h2 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+
+    .toolbar {
       display: flex;
       flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1rem;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1.25rem;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
     }
-    .filters label {
+
+    .field {
       display: flex;
       flex-direction: column;
-      font-size: 0.85rem;
-      font-weight: 600;
       gap: 0.25rem;
-    }
-    .filters select {
-      font-size: 0.9rem;
-      padding: 0.35rem 0.5rem;
-      border: 1px solid #c0c7d1;
-      border-radius: 4px;
       min-width: 180px;
     }
+
+    .field label {
+      font-weight: 500;
+      font-size: 0.82rem;
+      color: #374151;
+    }
+
+    .field select {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .btn-export {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      background: #ab377a;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .btn-export:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .status { margin-top: 0.75rem; }
     .status-error { color: #b00020; }
@@ -145,12 +191,22 @@ interface PivotRow {
     }
 
     thead th {
-      background: #f4f6f9;
+      background: #ab377a;
+      color: #fff;
       font-weight: 600;
       position: sticky;
       top: 0;
       z-index: 1;
+      border: 1px solid #ffffff;
     }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    .sortable:hover { background: #933068; }
+
+    .sort-icon { font-style: normal; margin-left: 4px; opacity: 0.85; }
 
     .num-h { text-align: right; }
     tbody tr:hover { background: #f9fafb; }
@@ -182,6 +238,10 @@ export class LabCost implements OnInit {
   protected readonly selectedHorizon = signal('');
   protected readonly selectedSb = signal('');
   protected readonly selectedLoc = signal('');
+
+  // Sort state
+  protected readonly sortCol = signal<string>('location');
+  protected readonly sortAsc = signal<boolean>(true);
 
   /** Unique sorted FY values — become dynamic column headers. */
   protected readonly fyColumns = computed(() =>
@@ -216,6 +276,50 @@ export class LabCost implements OnInit {
       a.location.localeCompare(b.location) || a.sbname.localeCompare(b.sbname)
     );
   });
+
+  /** Pivot rows after applying the current sort column/direction. */
+  protected readonly sortedPivotRows = computed((): PivotRow[] => {
+    const col = this.sortCol();
+    const asc = this.sortAsc();
+    const rows = [...this.pivotRows()];
+
+    rows.sort((a, b) => {
+      let av: number | string | null;
+      let bv: number | string | null;
+
+      if (col === 'location') {
+        av = a.location; bv = b.location;
+      } else if (col === 'sbname') {
+        av = a.sbname; bv = b.sbname;
+      } else {
+        av = a.values[col] ?? null;
+        bv = b.values[col] ?? null;
+        // Nulls last
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return asc ? (av as number) - (bv as number) : (bv as number) - (av as number);
+      }
+      const cmp = (av as string).localeCompare(bv as string);
+      return asc ? cmp : -cmp;
+    });
+
+    return rows;
+  });
+
+  protected sort(col: string): void {
+    if (this.sortCol() === col) {
+      this.sortAsc.set(!this.sortAsc());
+    } else {
+      this.sortCol.set(col);
+      this.sortAsc.set(true);
+    }
+  }
+
+  protected sortIcon(col: string): string {
+    if (this.sortCol() !== col) return '⇅';
+    return this.sortAsc() ? '▲' : '▼';
+  }
 
   ngOnInit(): void {
     // Load all three filter dropdowns in parallel from existing endpoints.
@@ -263,5 +367,25 @@ export class LabCost implements OnInit {
         this.error.set('Failed to load lab cost data.');
       },
     });
+  }
+
+  protected exportToExcel(): void {
+    const fyCols = this.fyColumns();
+    const rows = this.sortedPivotRows();
+
+    const header = ['Location', 'Service Bundle', ...fyCols];
+    const data = rows.map((row) => [
+      row.location,
+      row.sbname,
+      ...fyCols.map((fy) => (row.values[fy] != null ? Math.round(row.values[fy]!) : '')),
+    ]);
+
+    const wsData = [header, ...data];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lab Cost Qtr Avg');
+
+    const horizon = this.selectedHorizon() || 'all';
+    XLSX.writeFile(wb, `lab-cost-qtr-avg-${horizon}.xlsx`);
   }
 }
