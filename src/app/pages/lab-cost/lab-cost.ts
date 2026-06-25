@@ -57,7 +57,7 @@ interface PivotRow {
           </select>
         </div>
 
-        <div class="field" style="justify-content: flex-end;">
+        <div class="field" style="justify-content: flex-end; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
           <button class="btn-search" (click)="loadData()" [disabled]="!selectedHorizon() || loading()">
             &#128269; Search
           </button>
