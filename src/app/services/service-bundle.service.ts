@@ -129,6 +129,8 @@ export interface SbApprovalRow {
   horizon: string;
   sbName: string;
   ownerName: string;
+  customerGroup: string;
+  customerName: string;
   approvalStatus: string;
 }
 @Injectable({ providedIn: 'root' })

@@ -74,15 +74,19 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
                 <th>Horizon</th>
                 <th>Service Bundle Owner</th>
                 <th>SB Name</th>
+                <th>Customer Group</th>
+                <th>Customer Name</th>
                 <th>Approval Status</th>
               </tr>
             </thead>
             <tbody>
-              @for (r of rows(); track r.horizon + '|' + r.sbName) {
+              @for (r of rows(); track r.horizon + '|' + r.sbName + '|' + r.customerName) {
                 <tr>
                   <td>{{ r.horizon }}</td>
                   <td>{{ r.ownerName }}</td>
                   <td>{{ r.sbName }}</td>
+                  <td>{{ r.customerGroup }}</td>
+                  <td>{{ r.customerName }}</td>
                   <td>
                     <span class="badge" [class]="statusClass(r.approvalStatus)">{{ r.approvalStatus }}</span>
                   </td>
