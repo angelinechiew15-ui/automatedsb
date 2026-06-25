@@ -16,8 +16,9 @@ interface GroupedSbRow {
 }
 
 interface DisplayRow extends GroupedSbRow {
-  divRowspan:    number;
-  subDivRowspan: number;
+  divRowspan:     number;
+  subDivRowspan:  number;
+  summaryRowspan: number;
 }
 
 @Component({
@@ -154,8 +155,8 @@ interface DisplayRow extends GroupedSbRow {
               <tr>
                 <th rowspan="2" class="col-div">Div</th>
                 <th rowspan="2" class="col-subdiv">Sub Div</th>
-                <th rowspan="2" class="col-sb">SB</th>
                 <th rowspan="2" class="col-summary">Summary</th>
+                <th rowspan="2" class="col-sb">SB</th>
                 <th rowspan="2" class="col-status">SB Status</th>
                 <th rowspan="2" class="col-text">Comments, Demand and Cost Drivers</th>
                 <th [attr.colspan]="activeFys().length" class="col-grp">TSpM Demand</th>
@@ -177,8 +178,10 @@ interface DisplayRow extends GroupedSbRow {
                   @if (row.subDivRowspan > 0) {
                     <td [attr.rowspan]="row.subDivRowspan" class="col-subdiv td-merged">{{ row.subDiv }}</td>
                   }
+                  @if (row.summaryRowspan > 0) {
+                    <td [attr.rowspan]="row.summaryRowspan" class="col-summary td-merged">{{ row.summary }}</td>
+                  }
                   <td class="col-sb">{{ row.sb }}</td>
-                  <td class="col-summary">{{ row.summary }}</td>
                   <td class="col-status">
                     @if (row.sbStatus) {
                       <span class="badge" [class]="badgeClass(row.sbStatus)">{{ row.sbStatus }}</span>
@@ -410,8 +413,9 @@ export class WorkshopSummary implements OnInit {
         for (let j = k; j < i + divCount && rows[j].subDiv === subDiv; j++) subDivCount++;
         for (let n = 0; n < subDivCount; n++) {
           result.push({ ...rows[k + n],
-            divRowspan:    (k === i && n === 0) ? divCount    : 0,
-            subDivRowspan: n === 0              ? subDivCount : 0,
+            divRowspan:     (k === i && n === 0) ? divCount    : 0,
+            subDivRowspan:  n === 0              ? subDivCount : 0,
+            summaryRowspan: n === 0              ? subDivCount : 0,
           });
         }
         k += subDivCount;
@@ -552,13 +556,13 @@ export class WorkshopSummary implements OnInit {
   protected exportToExcel(): void {
     const fys = this.activeFys();
     const headers = [
-      'Div', 'Sub Div', 'SB', 'Summary', 'SB Status', 'Comments, Demand and Cost Drivers',
+      'Div', 'Sub Div', 'Summary', 'SB', 'SB Status', 'Comments, Demand and Cost Drivers',
       ...fys.map(f => `TSpM Demand (${f})`),
       ...fys.map(f => `RTU Demand (${f})`),
       ...fys.map(f => `Cost Demand k EUR (${f})`),
     ];
     const data = this.filteredGroupedRows().map(r => [
-      r.divName, r.subDiv, r.sb, r.summary, r.sbStatus, r.comment,
+      r.divName, r.subDiv, r.summary, r.sb, r.sbStatus, r.comment,
       ...fys.map(f => r.fyDemands[f]?.tsDemand ?? null),
       ...fys.map(f => r.fyDemands[f]?.rtuDemand ?? null),
       ...fys.map(f => r.fyDemands[f]?.costDemand ?? null),
