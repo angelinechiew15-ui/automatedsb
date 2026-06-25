@@ -133,6 +133,7 @@ interface DisplayRow extends GroupedSbRow {
                 <button class="btn-cancel" (click)="showSummaryPanel.set(false)">Cancel</button>
                 @if (summarySaveOk()) { <span class="save-ok">&#10003; Saved</span> }
                 @if (summarySaveErr()) { <span class="save-err">{{ summarySaveErr() }}</span> }
+              </div>
             </div>
           </div>
         </div>
