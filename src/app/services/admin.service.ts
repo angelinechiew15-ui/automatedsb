@@ -67,6 +67,8 @@ export interface WorkshopSummaryRow {
   rtuts: string;
 }
 
+export interface WsOption { id: string; name: string; }
+
 export interface WorkshopSbStatusRow {
   divName:   string;
   subDiv:    string;
@@ -222,6 +224,23 @@ export class AdminService {
   getWorkshopSbStatus(horizon: string): Observable<WorkshopSbStatusRow[]> {
     const params = new HttpParams().set('horizon', horizon);
     return this.http.get<WorkshopSbStatusRow[]>(`${this.base}/workshop-summary/sb-status`, { params });
+  }
+
+  getWorkshopSbOptions(): Observable<WsOption[]> {
+    return this.http.get<WsOption[]>(`${this.base}/workshop-summary/sb-options`);
+  }
+
+  getWorkshopDivOptions(): Observable<WsOption[]> {
+    return this.http.get<WsOption[]>(`${this.base}/workshop-summary/div-options`);
+  }
+
+  getWorkshopComment(id: string, type: 'N' | 'Y'): Observable<{ comment: string }> {
+    const params = new HttpParams().set('id', id).set('type', type);
+    return this.http.get<{ comment: string }>(`${this.base}/workshop-summary/comment`, { params });
+  }
+
+  saveWorkshopComment(id: string, type: 'N' | 'Y', comment: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.base}/workshop-summary/comment`, { id, type, comment });
   }
 
   // ORM Summary

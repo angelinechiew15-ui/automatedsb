@@ -24,7 +24,6 @@ interface PivotRow {
   imports: [CommonModule, FormsModule],
   template: `
     <section class="page">
-      <h2>Lab Cost Qtr Avg</h2>
 
       <div class="toolbar">
         <div class="field">
