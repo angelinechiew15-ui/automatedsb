@@ -128,15 +128,8 @@ export interface LabSummaryFilterOptions {
 export interface SbApprovalRow {
   horizon: string;
   sbName: string;
-  publishDate: string;
-  customerGroup: string;
-  customerName: string;
+  ownerName: string;
   approvalStatus: string;
-  reason: string;
-  approvalDate: string;
-  sbStatus: string;
-  releaseDate: string;
-  conditionalRelease: string;
 }
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
