@@ -127,13 +127,17 @@ export interface LabSummaryFilterOptions {
 
 export interface SbApprovalRow {
   horizon: string;
-  sbId: string;
   sbName: string;
-  ownerId: string;
-  ownerName: string;
+  publishDate: string;
+  customerGroup: string;
+  customerName: string;
   approvalStatus: string;
+  reason: string;
+  approvalDate: string;
+  sbStatus: string;
+  releaseDate: string;
+  conditionalRelease: string;
 }
-
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);

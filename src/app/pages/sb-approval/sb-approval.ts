@@ -72,20 +72,34 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
             <thead>
               <tr>
                 <th>Horizon</th>
-                <th>Service Bundle Owner</th>
-                <th>Service Bundle Name</th>
+                <th>SB Name</th>
+                <th>Publish Date</th>
+                <th>Customer Group</th>
+                <th>Customer Name</th>
                 <th>Approval Status</th>
+                <th>Reason</th>
+                <th>Approval Date</th>
+                <th>SB Status</th>
+                <th>Release Date</th>
+                <th>Conditional Release</th>
               </tr>
             </thead>
             <tbody>
-              @for (r of rows(); track r.horizon + '|' + r.sbId) {
+              @for (r of rows(); track r.horizon + '|' + r.sbName) {
                 <tr>
                   <td>{{ r.horizon }}</td>
-                  <td>{{ r.ownerName }}</td>
                   <td>{{ r.sbName }}</td>
+                  <td>{{ r.publishDate }}</td>
+                  <td>{{ r.customerGroup }}</td>
+                  <td>{{ r.customerName }}</td>
                   <td>
                     <span class="badge" [class]="statusClass(r.approvalStatus)">{{ r.approvalStatus }}</span>
                   </td>
+                  <td>{{ r.reason }}</td>
+                  <td>{{ r.approvalDate }}</td>
+                  <td>{{ r.sbStatus }}</td>
+                  <td>{{ r.releaseDate }}</td>
+                  <td>{{ r.conditionalRelease }}</td>
                 </tr>
               }
             </tbody>
@@ -122,14 +136,14 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     .status { margin-top: 0.75rem; color: #6b7280; }
     .status-error { color: #b00020; }
     .table-wrap {
-      margin-top: 0.75rem; overflow: auto; max-height: 70vh;
+      margin-top: 0.75rem; overflow-x: auto; overflow-y: auto; max-height: 70vh;
       border: 1px solid #d9dde3; border-radius: 8px; background: #fff;
     }
     table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 0.55rem 0.7rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.85rem; }
+    th, td { padding: 0.5rem 0.6rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.78rem; white-space: nowrap; min-width: 85px; }
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
-      position: sticky; top: 0; z-index: 1; white-space: nowrap;
+      position: sticky; top: 0; z-index: 2; min-width: 85px;
     }
     tbody tr:hover { background: #f9fafb; }
     .badge {
