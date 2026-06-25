@@ -21,6 +21,8 @@ interface DisplayRow extends GroupedSbRow {
   summaryRowspan: number;
   isTotalRow:     boolean;
   tsTotals:       Record<string, number>;
+  rtuTotals:      Record<string, number>;
+  costTotals:     Record<string, number>;
 }
 
 @Component({
@@ -176,15 +178,15 @@ interface DisplayRow extends GroupedSbRow {
                 @if (row.isTotalRow) {
                   <tr class="tr-total">
                     <td [attr.rowspan]="row.divRowspan" class="col-div td-merged">{{ row.divName }}</td>
-                    <td colspan="5" class="col-total-label">TSpM Total</td>
+                    <td colspan="5" class="col-total-label">Total</td>
                     @for (fy of activeFys(); track fy) {
                       <td class="col-num total-num">{{ row.tsTotals[fy] | number:'1.0-2' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">&#8212;</td>
+                      <td class="col-num total-num">{{ row.rtuTotals[fy] | number:'1.0-2' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">&#8212;</td>
+                      <td class="col-num total-num">{{ row.costTotals[fy] | number:'1.0-2' }}</td>
                     }
                   </tr>
                 } @else {
@@ -426,22 +428,26 @@ export class WorkshopSummary implements OnInit {
       let divCount = 0;
       for (let j = i; j < rows.length && rows[j].divName === divName; j++) divCount++;
 
-      // compute TSpM totals per FY across all rows in this div
+      // compute totals per FY across all rows in this div
       const tsTotals: Record<string, number> = {};
+      const rtuTotals: Record<string, number> = {};
+      const costTotals: Record<string, number> = {};
       for (const fy of fys) {
-        let sum = 0;
+        let ts = 0, rtu = 0, cost = 0;
         for (let j = i; j < i + divCount; j++) {
-          const v = rows[j].fyDemands[fy]?.tsDemand;
-          if (v != null) sum += v;
+          const d = rows[j].fyDemands[fy];
+          if (d?.tsDemand  != null) ts   += d.tsDemand;
+          if (d?.rtuDemand != null) rtu  += d.rtuDemand;
+          if (d?.costDemand != null) cost += d.costDemand;
         }
-        tsTotals[fy] = sum;
+        tsTotals[fy] = ts; rtuTotals[fy] = rtu; costTotals[fy] = cost;
       }
 
       // insert total row at top of each div group; it owns the Div merged cell
       result.push({
         divName, subDiv: '', sb: '', sbStatus: '', comment: '', summary: '', fyDemands: {},
         divRowspan: divCount + 1, subDivRowspan: 0, summaryRowspan: 0,
-        isTotalRow: true, tsTotals,
+        isTotalRow: true, tsTotals, rtuTotals, costTotals,
       });
 
       let k = i;
@@ -454,7 +460,7 @@ export class WorkshopSummary implements OnInit {
             divRowspan:     0,  // Div cell already rendered in total row
             subDivRowspan:  n === 0 ? subDivCount : 0,
             summaryRowspan: n === 0 ? subDivCount : 0,
-            isTotalRow: false, tsTotals: {},
+            isTotalRow: false, tsTotals: {}, rtuTotals: {}, costTotals: {},
           });
         }
         k += subDivCount;
