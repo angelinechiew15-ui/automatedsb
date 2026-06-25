@@ -370,7 +370,7 @@ export class LabCost implements OnInit {
     this.allRows.set([]);
   }
 
-  private loadData(): void {
+  protected loadData(): void {
     this.loading.set(true);
     this.error.set(null);
     this.api.getLabCostQtrAvg(this.selectedHorizon()).subscribe({
