@@ -4,6 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, WorkshopSbStatusRow } from '../../services/admin.service';
 import { LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
 
+interface GroupedSbRow {
+  divName:   string;
+  subDiv:    string;
+  sb:        string;
+  sbStatus:  string;
+  comment:   string;
+  summary:   string;
+  fyDemands: Record<string, { tsDemand: number | null; rtuDemand: number | null; costDemand: number | null }>;
+}
+
 @Component({
   selector: 'app-workshop-summary',
   standalone: true,
@@ -36,40 +46,49 @@ import { LookupItem, ServiceBundleService } from '../../services/service-bundle.
         <p class="status status-error">{{ error() }}</p>
       } @else if (!selectedHorizon()) {
         <p class="status">Select a horizon and click Refresh to view data.</p>
-      } @else if (rows().length === 0) {
+      } @else if (groupedRows().length === 0) {
         <p class="status">No records found for the selected horizon.</p>
       } @else {
         <div class="table-wrap" role="region" aria-label="Workshop summary table" tabindex="0">
           <table>
             <thead>
               <tr>
-                <th class="col-div">Div</th>
-                <th class="col-subdiv">Sub Div</th>
-                <th class="col-sb">SB</th>
-                <th class="col-status">SB Status</th>
-                <th class="col-summary">Summary</th>
-                <th class="col-text">Comment</th>
-                <th class="col-num">TSpM Demand</th>
-                <th class="col-num">RTU Demand</th>
-                <th class="col-num">Cost Demand</th>
+                <th rowspan="2" class="col-div">Div</th>
+                <th rowspan="2" class="col-subdiv">Sub Div</th>
+                <th rowspan="2" class="col-sb">SB</th>
+                <th rowspan="2" class="col-summary">Summary</th>
+                <th rowspan="2" class="col-status">SB Status</th>
+                <th rowspan="2" class="col-text">Comments, Demand and Cost Drivers</th>
+                @for (fy of fyList(); track fy) {
+                  <th colspan="3" class="col-fy-group">{{ fy }}</th>
+                }
+              </tr>
+              <tr>
+                @for (fy of fyList(); track fy) {
+                  <th class="col-num">TSpM Demand</th>
+                  <th class="col-num">RTU Demand</th>
+                  <th class="col-num">Cost Demand (k EUR)</th>
+                }
               </tr>
             </thead>
             <tbody>
-              @for (row of rows(); track row.divName + '|' + row.sb) {
+              @for (row of groupedRows(); track row.divName + '|' + row.sb) {
                 <tr>
                   <td class="col-div">{{ row.divName }}</td>
                   <td class="col-subdiv">{{ row.subDiv }}</td>
                   <td class="col-sb">{{ row.sb }}</td>
+                  <td class="col-summary">{{ row.summary }}</td>
                   <td class="col-status">
                     @if (row.sbStatus) {
                       <span class="badge" [class]="badgeClass(row.sbStatus)">{{ row.sbStatus }}</span>
                     }
                   </td>
-                  <td class="col-summary">{{ row.summary }}</td>
                   <td class="col-text">{{ row.comment }}</td>
-                  <td class="col-num">{{ row.tsDemand != null ? (row.tsDemand | number:'1.0-2') : '\u2014' }}</td>
-                  <td class="col-num">{{ row.rtuDemand != null ? (row.rtuDemand | number:'1.0-2') : '\u2014' }}</td>
-                  <td class="col-num">{{ row.costDemand != null ? (row.costDemand | number:'1.0-2') : '\u2014' }}</td>
+                  @for (fy of fyList(); track fy) {
+                    <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.0-2') : '\u2014' }}</td>
+                    <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.0-2') : '\u2014' }}</td>
+                    <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.0-2') : '\u2014' }}</td>
+                  }
                 </tr>
               }
             </tbody>
@@ -136,6 +155,7 @@ import { LookupItem, ServiceBundleService } from '../../services/service-bundle.
     .col-summary{ min-width: 150px; max-width: 220px; }
     .col-text   { min-width: 150px; max-width: 250px; }
     .col-num    { min-width: 110px; text-align: right; white-space: nowrap; }
+    .col-fy-group { text-align: center; background: #c2527d; }
 
     .badge {
       display: inline-block; padding: 0.2rem 0.5rem;
@@ -157,6 +177,37 @@ export class WorkshopSummary implements OnInit {
   protected readonly rows            = signal<WorkshopSbStatusRow[]>([]);
   protected readonly loading         = signal(false);
   protected readonly error           = signal<string | null>(null);
+
+  protected readonly fyList = computed(() => {
+    const fys = new Set(this.rows().map(r => r.fy).filter(f => !!f));
+    return [...fys].sort();
+  });
+
+  protected readonly groupedRows = computed((): GroupedSbRow[] => {
+    const map = new Map<string, GroupedSbRow>();
+    for (const row of this.rows()) {
+      const key = `${row.divName}|${row.subDiv}|${row.sb}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          divName: row.divName,
+          subDiv: row.subDiv,
+          sb: row.sb,
+          sbStatus: row.sbStatus,
+          comment: row.comment,
+          summary: row.summary,
+          fyDemands: {},
+        });
+      }
+      if (row.fy) {
+        map.get(key)!.fyDemands[row.fy] = {
+          tsDemand: row.tsDemand,
+          rtuDemand: row.rtuDemand,
+          costDemand: row.costDemand,
+        };
+      }
+    }
+    return [...map.values()];
+  });
 
   ngOnInit(): void {
     this.sbSvc.listHorizons().subscribe({
@@ -182,6 +233,12 @@ export class WorkshopSummary implements OnInit {
       next:  (data) => { this.rows.set(data ?? []); this.loading.set(false); },
       error: ()     => { this.error.set('Failed to load workshop summary data.'); this.loading.set(false); },
     });
+  }
+
+  protected fyDemand(row: GroupedSbRow, fy: string, type: 'ts' | 'rtu' | 'cost'): number | null {
+    const d = row.fyDemands[fy];
+    if (!d) return null;
+    return type === 'ts' ? d.tsDemand : type === 'rtu' ? d.rtuDemand : d.costDemand;
   }
 
   protected badgeClass(status: string): string {

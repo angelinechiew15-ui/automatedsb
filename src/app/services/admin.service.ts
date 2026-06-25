@@ -74,6 +74,7 @@ export interface WorkshopSbStatusRow {
   sbStatus:  string;
   comment:   string;
   summary:   string;
+  fy:        string;
   tsDemand:  number | null;
   rtuDemand: number | null;
   costDemand: number | null;
