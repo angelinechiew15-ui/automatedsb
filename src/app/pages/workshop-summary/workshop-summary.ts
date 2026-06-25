@@ -311,16 +311,22 @@ export class WorkshopSummary implements OnInit {
   // ── Filters ───────────────────────────────────────────────────────────────
   protected readonly selectedDiv      = signal('');
   protected readonly selectedSbFilter = signal('');
+  private readonly preloadedPairs     = signal<{ div: string; sb: string }[]>([]);
 
-  protected readonly divOptions = computed(() =>
-    [...new Set(this.groupedRows().map(r => r.divName).filter(Boolean))].sort()
-  );
+  protected readonly divOptions = computed(() => {
+    const fromRows = [...new Set(this.groupedRows().map(r => r.divName).filter(Boolean))].sort();
+    if (fromRows.length) return fromRows;
+    return [...new Set(this.preloadedPairs().map(p => p.div).filter(Boolean))].sort();
+  });
 
   protected readonly sbFilterOptions = computed(() => {
-    const rows = this.selectedDiv()
-      ? this.groupedRows().filter(r => r.divName === this.selectedDiv())
-      : this.groupedRows();
-    return [...new Set(rows.map(r => r.sb).filter(Boolean))].sort();
+    const div = this.selectedDiv();
+    if (this.groupedRows().length) {
+      const rows = div ? this.groupedRows().filter(r => r.divName === div) : this.groupedRows();
+      return [...new Set(rows.map(r => r.sb).filter(Boolean))].sort();
+    }
+    const pairs = div ? this.preloadedPairs().filter(p => p.div === div) : this.preloadedPairs();
+    return [...new Set(pairs.map(p => p.sb).filter(Boolean))].sort();
   });
 
   // ── FY ────────────────────────────────────────────────────────────────────
@@ -484,6 +490,9 @@ export class WorkshopSummary implements OnInit {
     this.sbSvc.listHorizons().subscribe({
       next: (data) => { this.horizons.set(data); if (data.length) this.selectedHorizon.set(data[0].value); },
       error: () => this.error.set('Failed to load horizons.'),
+    });
+    this.adminSvc.getWorkshopFilterOptions().subscribe({
+      next: (pairs) => this.preloadedPairs.set(pairs),
     });
   }
 

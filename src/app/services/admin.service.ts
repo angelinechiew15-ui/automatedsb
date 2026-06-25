@@ -226,6 +226,10 @@ export class AdminService {
     return this.http.get<WorkshopSbStatusRow[]>(`${this.base}/workshop-summary/sb-status`, { params });
   }
 
+  getWorkshopFilterOptions(): Observable<{ div: string; sb: string }[]> {
+    return this.http.get<{ div: string; sb: string }[]>(`${this.base}/workshop-summary/filter-options`);
+  }
+
   getWorkshopSbOptions(): Observable<WsOption[]> {
     return this.http.get<WsOption[]>(`${this.base}/workshop-summary/sb-options`);
   }
