@@ -166,6 +166,9 @@ interface DisplayRow extends GroupedSbRow {
                 <th [attr.colspan]="activeFys().length" class="col-grp">TSpM Demand</th>
                 <th [attr.colspan]="activeFys().length" class="col-grp">RTU Demand</th>
                 <th [attr.colspan]="activeFys().length" class="col-grp">Cost Demand (k EUR)</th>
+                <th rowspan="2" class="col-change">Change to Previous Year (TSPM)</th>
+                <th rowspan="2" class="col-change">Change to Previous Year (RTU)</th>
+                <th rowspan="2" class="col-change">Change to Previous Year (Cost k EUR)</th>
               </tr>
               <tr>
                 @for (fy of activeFys(); track fy) { <th class="col-num col-fy">{{ fy }}</th> }
@@ -188,6 +191,9 @@ interface DisplayRow extends GroupedSbRow {
                     @for (fy of activeFys(); track fy) {
                       <td class="col-num total-num">{{ row.costTotals[fy] | number:'1.1-1' }}</td>
                     }
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'ts') != null ? ((changeToPreviousYear(row, 'ts')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'rtu') != null ? ((changeToPreviousYear(row, 'rtu')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'cost') != null ? ((changeToPreviousYear(row, 'cost')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
                   </tr>
                 } @else {
                   <tr>
@@ -213,6 +219,9 @@ interface DisplayRow extends GroupedSbRow {
                     @for (fy of activeFys(); track fy) {
                       <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.1-1') : '\u2014' }}</td>
                     }
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'ts') != null ? ((changeToPreviousYear(row, 'ts')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'rtu') != null ? ((changeToPreviousYear(row, 'rtu')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
+                    <td class="col-num col-change">{{ changeToPreviousYear(row, 'cost') != null ? ((changeToPreviousYear(row, 'cost')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
                   </tr>
                 }
               }
@@ -310,8 +319,11 @@ interface DisplayRow extends GroupedSbRow {
     th, td { padding: 0.45rem 0.65rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.82rem; }
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
-      position: sticky; top: 0; z-index: 1; white-space: nowrap;
+      position: sticky; z-index: 1; white-space: nowrap;
     }
+    thead tr:nth-child(1) th { top: 0; z-index: 4; }
+    thead tr:nth-child(2) th { top: 33px; z-index: 3; }
+    thead tr:nth-child(1) th[rowspan] { top: 0; z-index: 5; }
     .col-grp { text-align: center; background: #7b2257; }
     .col-fy  { background: #ab377a; }
     tbody tr:hover { background: #f9fafb; }
@@ -322,6 +334,7 @@ interface DisplayRow extends GroupedSbRow {
     .col-summary{ min-width: 140px; max-width: 220px; white-space: normal; }
     .col-text   { min-width: 160px; max-width: 280px; white-space: normal; }
     .col-num    { min-width: 100px; text-align: right; white-space: nowrap; }
+    .col-change { min-width: 170px; text-align: right; white-space: nowrap; }
     .td-merged  { vertical-align: middle; font-weight: 500; background: #fafafa; }
     .tr-total td { background: #eef2fb; font-weight: 700; }
     .col-total-label { font-style: italic; color: #4b6eb4; font-size: 0.8rem; }
@@ -596,6 +609,26 @@ export class WorkshopSummary implements OnInit {
     return fy === this.currentFy() ? raw / 4 : raw;
   }
 
+  private metricForRow(row: DisplayRow, fy: string, type: 'ts' | 'rtu' | 'cost'): number | null {
+    if (row.isTotalRow) {
+      if (type === 'ts') return row.tsTotals[fy] ?? null;
+      if (type === 'rtu') return row.rtuTotals[fy] ?? null;
+      return row.costTotals[fy] ?? null;
+    }
+    return this.fyDemand(row, fy, type);
+  }
+
+  protected changeToPreviousYear(row: DisplayRow, type: 'ts' | 'rtu' | 'cost'): number | null {
+    const fys = this.activeFys();
+    if (fys.length < 2) return null;
+    const previousFy = fys[0];
+    const currentFy = fys[1];
+    const previous = this.metricForRow(row, previousFy, type);
+    const current = this.metricForRow(row, currentFy, type);
+    if (previous == null || current == null || previous === 0) return null;
+    return (current - previous) / previous;
+  }
+
   protected badgeClass(status: string): string {
     const s = (status ?? '').toLowerCase();
     if (s.includes('approv')) return 'badge badge-approved';
@@ -607,17 +640,33 @@ export class WorkshopSummary implements OnInit {
   // ── Excel export ──────────────────────────────────────────────────────────
   protected exportToExcel(): void {
     const fys = this.activeFys();
+    const previousFy = fys[0] ?? '';
+    const currentFy = fys[1] ?? '';
+    const adjusted = (value: number | null | undefined, fy: string): number | null => {
+      if (value == null) return null;
+      return fy === this.currentFy() ? value / 4 : value;
+    };
+    const change = (current: number | null, previous: number | null): string => {
+      if (current == null || previous == null || previous === 0) return '';
+      return `${(((current - previous) / previous) * 100).toFixed(1)}%`;
+    };
     const headers = [
       'Div', 'Sub Div', 'Summary', 'SB', 'SB Status', 'Comments, Demand and Cost Drivers',
       ...fys.map(f => `TSpM Demand (${f})`),
       ...fys.map(f => `RTU Demand (${f})`),
       ...fys.map(f => `Cost Demand k EUR (${f})`),
+      'Change to Previous Year (TSPM)',
+      'Change to Previous Year (RTU)',
+      'Change to Previous Year (Cost k EUR)',
     ];
     const data = this.filteredGroupedRows().map(r => [
       r.divName, r.subDiv, r.summary, r.sb, r.sbStatus, r.comment,
-      ...fys.map(f => { const v = r.fyDemands[f]?.tsDemand  ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
-      ...fys.map(f => { const v = r.fyDemands[f]?.rtuDemand ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
-      ...fys.map(f => { const v = r.fyDemands[f]?.costDemand ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
+      ...fys.map(f => adjusted(r.fyDemands[f]?.tsDemand, f)),
+      ...fys.map(f => adjusted(r.fyDemands[f]?.rtuDemand, f)),
+      ...fys.map(f => adjusted(r.fyDemands[f]?.costDemand, f)),
+      change(adjusted(r.fyDemands[currentFy]?.tsDemand, currentFy), adjusted(r.fyDemands[previousFy]?.tsDemand, previousFy)),
+      change(adjusted(r.fyDemands[currentFy]?.rtuDemand, currentFy), adjusted(r.fyDemands[previousFy]?.rtuDemand, previousFy)),
+      change(adjusted(r.fyDemands[currentFy]?.costDemand, currentFy), adjusted(r.fyDemands[previousFy]?.costDemand, previousFy)),
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
     const wb = XLSX.utils.book_new();

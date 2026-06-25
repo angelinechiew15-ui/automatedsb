@@ -201,8 +201,12 @@ interface PivotRow {
     /* Sticky column headers (rows 1-3) */
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
-      position: sticky; top: 0; z-index: 1;
+      position: sticky; z-index: 1;
     }
+    thead tr:nth-child(1) th { top: 0; z-index: 5; }
+    thead tr:nth-child(2) th { top: 33px; z-index: 4; }
+    thead tr:nth-child(3) th { top: 66px; z-index: 3; }
+    thead tr:nth-child(1) th[rowspan] { top: 0; z-index: 6; }
 
     /* Group headers (FY Quarter and Location rows) */
     .grp-h { text-align: center; background: #7b2257; }

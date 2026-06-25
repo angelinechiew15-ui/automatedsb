@@ -234,30 +234,8 @@ export class LabCost implements OnInit {
   private readonly api = inject(ServiceBundleService);
 
   protected readonly horizons = signal<LookupItem[]>([]);
-  /** Populated from data once loaded — avoids the cm_matrix_sb ID vs v_sb_asb_data name mismatch. */
-  protected readonly sbOptions = computed((): LookupItem[] => {
-    if (this.allRows().length) {
-      const seen = new Set<string>();
-      const result: LookupItem[] = [];
-      for (const r of this.allRows()) {
-        if (!seen.has(r.sb)) {
-          seen.add(r.sb);
-          result.push({ value: r.sb, text: r.sbname || r.sb });
-        }
-      }
-      return result.sort((a, b) => a.text.localeCompare(b.text));
-    }
-    return this.preloadedOptions().sbs;
-  });
-  protected readonly locOptions = computed((): string[] => {
-    if (this.allRows().length) {
-      const withValue = new Set(
-        this.allRows().filter((r) => r.value != null).map((r) => r.location).filter(Boolean)
-      );
-      return [...withValue].sort();
-    }
-    return this.preloadedOptions().locations;
-  });
+  protected readonly sbOptions = computed((): LookupItem[] => this.preloadedOptions().sbs);
+  protected readonly locOptions = computed((): string[] => this.preloadedOptions().locations);
   private readonly allRows = signal<LabCostRow[]>([]);
   private readonly preloadedOptions = signal<LabCostFilterOptions>({ locations: [], sbs: [] });
   protected readonly loading = signal(false);
@@ -266,6 +244,8 @@ export class LabCost implements OnInit {
   protected readonly selectedHorizon = signal('');
   protected readonly selectedSb = signal('');
   protected readonly selectedLoc = signal('');
+  private readonly appliedSb = signal('');
+  private readonly appliedLoc = signal('');
 
   // Sort state
   protected readonly sortCol = signal<string>('location');
@@ -281,8 +261,8 @@ export class LabCost implements OnInit {
    * keyed by FY so each FY column can look up its cell value.
    */
   protected readonly pivotRows = computed((): PivotRow[] => {
-    const sb = this.selectedSb();
-    const loc = this.selectedLoc();
+    const sb = this.appliedSb();
+    const loc = this.appliedLoc();
     const filtered = this.allRows().filter(
       (r) => (!sb || r.sb === sb) && (!loc || r.location === loc)
     );
@@ -365,15 +345,19 @@ export class LabCost implements OnInit {
 
   protected onHorizonChange(value: string): void {
     this.selectedHorizon.set(value);
-    this.selectedSb.set('');
-    this.selectedLoc.set('');
-    this.allRows.set([]);
   }
 
   protected loadData(): void {
+    const h = this.selectedHorizon();
+    if (!h) return;
+
+    // Apply selected filters only when Search is clicked.
+    this.appliedSb.set(this.selectedSb());
+    this.appliedLoc.set(this.selectedLoc());
+
     this.loading.set(true);
     this.error.set(null);
-    this.api.getLabCostQtrAvg(this.selectedHorizon()).subscribe({
+    this.api.getLabCostQtrAvg(h).subscribe({
       next: (data) => {
         this.allRows.set(data);
         this.loading.set(false);
