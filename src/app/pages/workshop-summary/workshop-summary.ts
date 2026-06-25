@@ -19,6 +19,8 @@ interface DisplayRow extends GroupedSbRow {
   divRowspan:     number;
   subDivRowspan:  number;
   summaryRowspan: number;
+  isTotalRow:     boolean;
+  tsTotals:       Record<string, number>;
 }
 
 @Component({
@@ -170,34 +172,47 @@ interface DisplayRow extends GroupedSbRow {
               </tr>
             </thead>
             <tbody>
-              @for (row of displayRows(); track row.divName + '|' + row.subDiv + '|' + row.sb) {
-                <tr>
-                  @if (row.divRowspan > 0) {
+              @for (row of displayRows(); track row.divName + '|' + row.subDiv + '|' + row.sb + '|' + row.isTotalRow) {
+                @if (row.isTotalRow) {
+                  <tr class="tr-total">
                     <td [attr.rowspan]="row.divRowspan" class="col-div td-merged">{{ row.divName }}</td>
-                  }
-                  @if (row.subDivRowspan > 0) {
-                    <td [attr.rowspan]="row.subDivRowspan" class="col-subdiv td-merged">{{ row.subDiv }}</td>
-                  }
-                  @if (row.summaryRowspan > 0) {
-                    <td [attr.rowspan]="row.summaryRowspan" class="col-summary td-merged">{{ row.summary }}</td>
-                  }
-                  <td class="col-sb">{{ row.sb }}</td>
-                  <td class="col-status">
-                    @if (row.sbStatus) {
-                      <span class="badge" [class]="badgeClass(row.sbStatus)">{{ row.sbStatus }}</span>
+                    <td colspan="5" class="col-total-label">TSpM Total</td>
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num total-num">{{ row.tsTotals[fy] | number:'1.0-2' }}</td>
                     }
-                  </td>
-                  <td class="col-text">{{ row.comment }}</td>
-                  @for (fy of activeFys(); track fy) {
-                    <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.0-2') : '\u2014' }}</td>
-                  }
-                  @for (fy of activeFys(); track fy) {
-                    <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.0-2') : '\u2014' }}</td>
-                  }
-                  @for (fy of activeFys(); track fy) {
-                    <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.0-2') : '\u2014' }}</td>
-                  }
-                </tr>
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num">&#8212;</td>
+                    }
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num">&#8212;</td>
+                    }
+                  </tr>
+                } @else {
+                  <tr>
+                    @if (row.subDivRowspan > 0) {
+                      <td [attr.rowspan]="row.subDivRowspan" class="col-subdiv td-merged">{{ row.subDiv }}</td>
+                    }
+                    @if (row.summaryRowspan > 0) {
+                      <td [attr.rowspan]="row.summaryRowspan" class="col-summary td-merged">{{ row.summary }}</td>
+                    }
+                    <td class="col-sb">{{ row.sb }}</td>
+                    <td class="col-status">
+                      @if (row.sbStatus) {
+                        <span class="badge" [class]="badgeClass(row.sbStatus)">{{ row.sbStatus }}</span>
+                      }
+                    </td>
+                    <td class="col-text">{{ row.comment }}</td>
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.0-2') : '\u2014' }}</td>
+                    }
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.0-2') : '\u2014' }}</td>
+                    }
+                    @for (fy of activeFys(); track fy) {
+                      <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.0-2') : '\u2014' }}</td>
+                    }
+                  </tr>
+                }
               }
             </tbody>
           </table>
@@ -306,6 +321,9 @@ interface DisplayRow extends GroupedSbRow {
     .col-text   { min-width: 160px; max-width: 280px; white-space: normal; }
     .col-num    { min-width: 100px; text-align: right; white-space: nowrap; }
     .td-merged  { vertical-align: middle; font-weight: 500; background: #fafafa; }
+    .tr-total td { background: #eef2fb; font-weight: 700; }
+    .col-total-label { font-style: italic; color: #4b6eb4; font-size: 0.8rem; }
+    .total-num { color: #1e3a8a; }
     .badge {
       display: inline-block; padding: 0.2rem 0.5rem;
       border-radius: 4px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;
@@ -400,12 +418,32 @@ export class WorkshopSummary implements OnInit {
 
   protected readonly displayRows = computed((): DisplayRow[] => {
     const rows = this.filteredGroupedRows();
+    const fys  = this.activeFys();
     const result: DisplayRow[] = [];
     let i = 0;
     while (i < rows.length) {
       const divName = rows[i].divName;
       let divCount = 0;
       for (let j = i; j < rows.length && rows[j].divName === divName; j++) divCount++;
+
+      // compute TSpM totals per FY across all rows in this div
+      const tsTotals: Record<string, number> = {};
+      for (const fy of fys) {
+        let sum = 0;
+        for (let j = i; j < i + divCount; j++) {
+          const v = rows[j].fyDemands[fy]?.tsDemand;
+          if (v != null) sum += v;
+        }
+        tsTotals[fy] = sum;
+      }
+
+      // insert total row at top of each div group; it owns the Div merged cell
+      result.push({
+        divName, subDiv: '', sb: '', sbStatus: '', comment: '', summary: '', fyDemands: {},
+        divRowspan: divCount + 1, subDivRowspan: 0, summaryRowspan: 0,
+        isTotalRow: true, tsTotals,
+      });
+
       let k = i;
       while (k < i + divCount) {
         const subDiv = rows[k].subDiv;
@@ -413,9 +451,10 @@ export class WorkshopSummary implements OnInit {
         for (let j = k; j < i + divCount && rows[j].subDiv === subDiv; j++) subDivCount++;
         for (let n = 0; n < subDivCount; n++) {
           result.push({ ...rows[k + n],
-            divRowspan:     (k === i && n === 0) ? divCount    : 0,
-            subDivRowspan:  n === 0              ? subDivCount : 0,
-            summaryRowspan: n === 0              ? subDivCount : 0,
+            divRowspan:     0,  // Div cell already rendered in total row
+            subDivRowspan:  n === 0 ? subDivCount : 0,
+            summaryRowspan: n === 0 ? subDivCount : 0,
+            isTotalRow: false, tsTotals: {},
           });
         }
         k += subDivCount;
