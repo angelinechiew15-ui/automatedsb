@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import {
+  LabCostFilterOptions,
   LabCostRow,
   LookupItem,
   ServiceBundleService,
@@ -57,6 +58,9 @@ interface PivotRow {
         </div>
 
         <div class="field" style="justify-content: flex-end;">
+          <button class="btn-search" (click)="loadData()" [disabled]="!selectedHorizon() || loading()">
+            &#128269; Search
+          </button>
           <button class="btn-export" (click)="exportToExcel()" [disabled]="pivotRows().length === 0">
             &#128190; Export to Excel
           </button>
@@ -68,9 +72,9 @@ interface PivotRow {
       } @else if (error()) {
         <p class="status status-error">{{ error() }}</p>
       } @else if (!selectedHorizon()) {
-        <p class="status">Select a horizon to view lab cost data.</p>
-      } @else if (pivotRows().length === 0) {
-        <p class="status">No lab cost data found for the selected filters.</p>
+        <p class="status">Select a horizon and click Search to view lab cost data.</p>
+      } @else if (pivotRows().length === 0 && !loading()) {
+        <p class="status">Click Search to load data, or no records found for the selected filters.</p>
       } @else {
         <div class="table-wrap" role="region" aria-label="Lab cost quarterly average" tabindex="0">
           <table>
@@ -151,6 +155,20 @@ interface PivotRow {
       background: #fff;
     }
 
+    .btn-search {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 5px;
+      border: 1px solid #ab377a;
+      cursor: pointer;
+      background: #fff;
+      color: #ab377a;
+      white-space: nowrap;
+    }
+    .btn-search:hover:not(:disabled) { background: #f9eef5; }
+    .btn-search:disabled { opacity: 0.55; cursor: not-allowed; }
+
     .btn-export {
       font-family: inherit;
       font-size: 0.85rem;
@@ -218,24 +236,30 @@ export class LabCost implements OnInit {
   protected readonly horizons = signal<LookupItem[]>([]);
   /** Populated from data once loaded — avoids the cm_matrix_sb ID vs v_sb_asb_data name mismatch. */
   protected readonly sbOptions = computed((): LookupItem[] => {
-    const seen = new Set<string>();
-    const result: LookupItem[] = [];
-    for (const r of this.allRows()) {
-      if (!seen.has(r.sb)) {
-        seen.add(r.sb);
-        result.push({ value: r.sb, text: r.sbname || r.sb });
+    if (this.allRows().length) {
+      const seen = new Set<string>();
+      const result: LookupItem[] = [];
+      for (const r of this.allRows()) {
+        if (!seen.has(r.sb)) {
+          seen.add(r.sb);
+          result.push({ value: r.sb, text: r.sbname || r.sb });
+        }
       }
+      return result.sort((a, b) => a.text.localeCompare(b.text));
     }
-    return result.sort((a, b) => a.text.localeCompare(b.text));
+    return this.preloadedOptions().sbs;
   });
-  /** Only locations that have at least one non-null cost value. */
   protected readonly locOptions = computed((): string[] => {
-    const withValue = new Set(
-      this.allRows().filter((r) => r.value != null).map((r) => r.location).filter(Boolean)
-    );
-    return [...withValue].sort();
+    if (this.allRows().length) {
+      const withValue = new Set(
+        this.allRows().filter((r) => r.value != null).map((r) => r.location).filter(Boolean)
+      );
+      return [...withValue].sort();
+    }
+    return this.preloadedOptions().locations;
   });
   private readonly allRows = signal<LabCostRow[]>([]);
+  private readonly preloadedOptions = signal<LabCostFilterOptions>({ locations: [], sbs: [] });
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -327,30 +351,23 @@ export class LabCost implements OnInit {
   }
 
   ngOnInit(): void {
-    // Load all three filter dropdowns in parallel from existing endpoints.
     this.api.listHorizons().subscribe({
       next: (data) => {
         this.horizons.set(data);
-        if (data.length) {
-          this.selectedHorizon.set(data[0].value);
-          this.loadData();
-        }
+        if (data.length) this.selectedHorizon.set(data[0].value);
       },
       error: () => this.error.set('Failed to load horizons.'),
     });
-
-    // locOptions is now derived from data rows via computed() — no separate API call needed.
+    this.api.getLabCostFilterOptions().subscribe({
+      next: (opts) => this.preloadedOptions.set(opts),
+    });
   }
 
   protected onHorizonChange(value: string): void {
     this.selectedHorizon.set(value);
     this.selectedSb.set('');
     this.selectedLoc.set('');
-    if (value) {
-      this.loadData();
-    } else {
-      this.allRows.set([]);
-    }
+    this.allRows.set([]);
   }
 
   private loadData(): void {

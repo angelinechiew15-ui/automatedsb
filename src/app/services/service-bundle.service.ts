@@ -112,6 +112,12 @@ export interface LabSummaryRow {
   costActual:    number | null;
 }
 
+/** Distinct filter option values for the Lab Cost dropdowns. */
+export interface LabCostFilterOptions {
+  locations: string[];
+  sbs:       LookupItem[];
+}
+
 /** Distinct filter option values for the Lab Summary dropdowns. */
 export interface LabSummaryFilterOptions {
   fyQuarters: string[];
@@ -188,6 +194,11 @@ export class ServiceBundleService {
   getLabSummary(horizon: string): Observable<LabSummaryRow[]> {
     const params = new HttpParams().set('horizon', horizon);
     return this.http.get<LabSummaryRow[]>(`${this.base}/lab-summary`, { params });
+  }
+
+  /** Distinct locations and SBs for the Lab Cost filter dropdowns. */
+  getLabCostFilterOptions(): Observable<LabCostFilterOptions> {
+    return this.http.get<LabCostFilterOptions>(`${this.base}/lab-cost/filter-options`);
   }
 
   /** Distinct FY Quarter, Location, SB values for the Lab Summary filter dropdowns (all horizons). */

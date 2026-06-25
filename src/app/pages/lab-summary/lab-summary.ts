@@ -95,8 +95,8 @@ interface PivotRow {
         <p class="status status-error">{{ error() }}</p>
       } @else if (!selectedHorizon()) {
         <p class="status">Select a horizon to view lab summary data.</p>
-      } @else if (pivotRows().length === 0) {
-        <p class="status">No data found for the selected filters.</p>
+      } @else if (pivotRows().length === 0 && !loading()) {
+        <p class="status">Click Refresh to load data, or no records found for the selected filters.</p>
       } @else {
         <div class="table-wrap" role="region" aria-label="Lab summary pivot" tabindex="0">
           <table>
