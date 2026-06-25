@@ -62,7 +62,7 @@ interface DisplayRow extends GroupedSbRow {
         </div>
         <div class="field" style="flex-direction:row; align-items:flex-end; gap:0.4rem;">
           <button class="btn-refresh" (click)="loadData()" [disabled]="!selectedHorizon() || loading()">
-            &#8635; Refresh
+            &#128269; Search
           </button>
           <button class="btn-export" (click)="exportToExcel()" [disabled]="displayRows().length === 0">
             &#128190; Export Excel
@@ -149,7 +149,7 @@ interface DisplayRow extends GroupedSbRow {
       } @else if (error()) {
         <p class="status status-error">{{ error() }}</p>
       } @else if (!selectedHorizon()) {
-        <p class="status">Select a horizon and click Refresh to view data.</p>
+        <p class="status">Select a horizon and click Search to view data.</p>
       } @else if (displayRows().length === 0) {
         <p class="status">No records found for the selected filters.</p>
       } @else {

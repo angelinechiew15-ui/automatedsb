@@ -81,7 +81,7 @@ interface PivotRow {
 
         <div class="field" style="justify-content: flex-end; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
           <button class="btn-refresh" (click)="refresh()" [disabled]="!selectedHorizon() || loading()">
-            &#8635; Refresh
+            &#128269; Search
           </button>
           <button class="btn-export" (click)="exportToExcel()" [disabled]="pivotRows().length === 0">
             &#128190; Export to Excel
@@ -96,7 +96,7 @@ interface PivotRow {
       } @else if (!selectedHorizon()) {
         <p class="status">Select a horizon to view lab summary data.</p>
       } @else if (pivotRows().length === 0 && !loading()) {
-        <p class="status">Click Refresh to load data, or no records found for the selected filters.</p>
+        <p class="status">Click Search to load data, or no records found for the selected filters.</p>
       } @else {
         <div class="table-wrap" role="region" aria-label="Lab summary pivot" tabindex="0">
           <table>
