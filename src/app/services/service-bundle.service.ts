@@ -125,6 +125,15 @@ export interface LabSummaryFilterOptions {
   sbs:        string[];
 }
 
+export interface SbApprovalRow {
+  horizon: string;
+  sbId: string;
+  sbName: string;
+  ownerId: string;
+  ownerName: string;
+  approvalStatus: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);
@@ -204,5 +213,14 @@ export class ServiceBundleService {
   /** Distinct FY Quarter, Location, SB values for the Lab Summary filter dropdowns (all horizons). */
   getLabSummaryFilterOptions(): Observable<LabSummaryFilterOptions> {
     return this.http.get<LabSummaryFilterOptions>(`${this.base}/lab-summary/filter-options`);
+  }
+
+  /** Service bundles with approval status for the SB Approval tab. */
+  getSbApprovalOverview(horizon: string, ownerId = '', sbId = '', status = ''): Observable<SbApprovalRow[]> {
+    let params = new HttpParams().set('horizon', horizon ?? '');
+    if (ownerId) params = params.set('ownerId', ownerId);
+    if (sbId) params = params.set('sbId', sbId);
+    if (status) params = params.set('status', status);
+    return this.http.get<SbApprovalRow[]>(`${this.base}/sb-approval/overview`, { params });
   }
 }
