@@ -62,72 +62,77 @@ interface DisplayRow extends GroupedSbRow {
           <button class="btn-export" (click)="exportToExcel()" [disabled]="displayRows().length === 0">
             &#128190; Export Excel
           </button>
-          <button class="btn-action" (click)="openCommentPanel()">+ Add Comments</button>
-          <button class="btn-action" (click)="openSummaryPanel()">+ Add Summary</button>
+          <button class="btn-action" (click)="openCommentPanel()">&#43; Add Comments</button>
+          <button class="btn-action" (click)="openSummaryPanel()">&#43; Add Summary</button>
         </div>
       </div>
 
       @if (showCommentPanel()) {
-        <div class="panel">
-          <div class="panel-header">
-            <span>Add / Update SB Comment</span>
-            <button class="btn-close" (click)="showCommentPanel.set(false)">&#10005;</button>
-          </div>
-          <div class="panel-body">
-            <div class="panel-field">
-              <label>Service Bundle</label>
-              <select [ngModel]="selectedCommentSbId()" (ngModelChange)="onCommentSbChange($event)">
-                <option value="">-- Select SB --</option>
-                @for (sb of commentSbs(); track sb.id) {
-                  <option [value]="sb.id">{{ sb.name }}</option>
-                }
-              </select>
+        <div class="modal-backdrop" (click)="showCommentPanel.set(false)">
+          <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <span>Add / Update SB Comment</span>
+              <button class="btn-close" (click)="showCommentPanel.set(false)">&#10005;</button>
             </div>
-            <div class="panel-field panel-field-wide">
-              <label>Comments, Demand and Cost Drivers</label>
-              <textarea rows="4" [ngModel]="commentText()" (ngModelChange)="commentText.set($event)"
-                        placeholder="Enter comment..."></textarea>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-save" (click)="saveComment()"
-                      [disabled]="!selectedCommentSbId() || savingComment()">
-                {{ commentExists() ? 'Update Comment' : 'Save Comment' }}
-              </button>
-              @if (commentSaveOk()) { <span class="save-ok">&#10003; Saved</span> }
-              @if (commentSaveErr()) { <span class="save-err">{{ commentSaveErr() }}</span> }
+            <div class="modal-body">
+              <div class="modal-field">
+                <label>Service Bundle</label>
+                <select [ngModel]="selectedCommentSbId()" (ngModelChange)="onCommentSbChange($event)">
+                  <option value="">-- Select SB --</option>
+                  @for (sb of commentSbs(); track sb.id) {
+                    <option [value]="sb.id">{{ sb.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="modal-field">
+                <label>Comments, Demand and Cost Drivers</label>
+                <textarea rows="5" [ngModel]="commentText()" (ngModelChange)="commentText.set($event)"
+                          placeholder="Enter comment..."></textarea>
+              </div>
+              <div class="modal-actions">
+                <button class="btn-save" (click)="saveComment()"
+                        [disabled]="!selectedCommentSbId() || savingComment()">
+                  {{ commentExists() ? 'Update Comment' : 'Save Comment' }}
+                </button>
+                <button class="btn-cancel" (click)="showCommentPanel.set(false)">Cancel</button>
+                @if (commentSaveOk()) { <span class="save-ok">&#10003; Saved</span> }
+                @if (commentSaveErr()) { <span class="save-err">{{ commentSaveErr() }}</span> }
+              </div>
             </div>
           </div>
         </div>
       }
 
       @if (showSummaryPanel()) {
-        <div class="panel">
-          <div class="panel-header">
-            <span>Add / Update Division Summary</span>
-            <button class="btn-close" (click)="showSummaryPanel.set(false)">&#10005;</button>
-          </div>
-          <div class="panel-body">
-            <div class="panel-field">
-              <label>Division</label>
-              <select [ngModel]="selectedSummaryDivId()" (ngModelChange)="onSummaryDivChange($event)">
-                <option value="">-- Select Division --</option>
-                @for (d of summaryDivs(); track d.id) {
-                  <option [value]="d.id">{{ d.name }}</option>
-                }
-              </select>
+        <div class="modal-backdrop" (click)="showSummaryPanel.set(false)">
+          <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <span>Add / Update Division Summary</span>
+              <button class="btn-close" (click)="showSummaryPanel.set(false)">&#10005;</button>
             </div>
-            <div class="panel-field panel-field-wide">
-              <label>Comments, Demand and Cost Drivers</label>
-              <textarea rows="4" [ngModel]="summaryText()" (ngModelChange)="summaryText.set($event)"
-                        placeholder="Enter summary..."></textarea>
-            </div>
-            <div class="panel-actions">
-              <button class="btn-save" (click)="saveSummary()"
-                      [disabled]="!selectedSummaryDivId() || savingSummary()">
-                {{ summaryExists() ? 'Update Summary' : 'Save Summary' }}
-              </button>
-              @if (summarySaveOk()) { <span class="save-ok">&#10003; Saved</span> }
-              @if (summarySaveErr()) { <span class="save-err">{{ summarySaveErr() }}</span> }
+            <div class="modal-body">
+              <div class="modal-field">
+                <label>Division</label>
+                <select [ngModel]="selectedSummaryDivId()" (ngModelChange)="onSummaryDivChange($event)">
+                  <option value="">-- Select Division --</option>
+                  @for (d of summaryDivs(); track d.id) {
+                    <option [value]="d.id">{{ d.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="modal-field">
+                <label>Comments, Demand and Cost Drivers</label>
+                <textarea rows="5" [ngModel]="summaryText()" (ngModelChange)="summaryText.set($event)"
+                          placeholder="Enter summary..."></textarea>
+              </div>
+              <div class="modal-actions">
+                <button class="btn-save" (click)="saveSummary()"
+                        [disabled]="!selectedSummaryDivId() || savingSummary()">
+                  {{ summaryExists() ? 'Update Summary' : 'Save Summary' }}
+                </button>
+                <button class="btn-cancel" (click)="showSummaryPanel.set(false)">Cancel</button>
+                @if (summarySaveOk()) { <span class="save-ok">&#10003; Saved</span> }
+                @if (summarySaveErr()) { <span class="save-err">{{ summarySaveErr() }}</span> }
             </div>
           </div>
         </div>
@@ -227,39 +232,50 @@ interface DisplayRow extends GroupedSbRow {
     }
     .btn-export:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-action {
-      font-family: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem;
-      border-radius: 5px; border: 1px solid #4b6eb4; cursor: pointer;
-      background: #fff; color: #4b6eb4; white-space: nowrap;
-    }
-    .btn-action:hover { background: #eef1fa; }
-
-    .panel {
-      margin-bottom: 1rem; background: #fff;
-      border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden;
-    }
-    .panel-header {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #f3f4f6; padding: 0.6rem 1rem;
-      font-weight: 600; font-size: 0.88rem;
-    }
-    .btn-close { background: none; border: none; cursor: pointer; font-size: 1rem; color: #6b7280; }
-    .btn-close:hover { color: #111; }
-    .panel-body { padding: 1rem 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
-    .panel-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 200px; }
-    .panel-field-wide { min-width: 380px; }
-    .panel-field label { font-weight: 500; font-size: 0.82rem; color: #374151; }
-    .panel-field select, .panel-field textarea {
-      padding: 0.45rem 0.6rem; border: 1px solid #d1d5db; border-radius: 5px;
-      font-size: 0.9rem; font-family: inherit; background: #fff;
-    }
-    .panel-field textarea { resize: vertical; }
-    .panel-actions { display: flex; align-items: center; gap: 0.75rem; }
-    .btn-save {
       font-family: inherit; font-size: 0.85rem; padding: 0.45rem 1rem;
       border-radius: 5px; border: none; cursor: pointer;
-      background: #ab377a; color: #fff;
+      background: #4b6eb4; color: #fff; white-space: nowrap; font-weight: 500;
+    }
+    .btn-action:hover { background: #3a5a9e; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+      width: 480px; max-width: 95vw; overflow: hidden;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #ab377a; color: #fff; padding: 0.75rem 1.25rem;
+      font-weight: 600; font-size: 0.95rem;
+    }
+    .btn-close { background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #fff; opacity: 0.85; }
+    .btn-close:hover { opacity: 1; }
+    .modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+    .modal-field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .modal-field label { font-weight: 500; font-size: 0.83rem; color: #374151; }
+    .modal-field select, .modal-field textarea {
+      padding: 0.5rem 0.65rem; border: 1px solid #d1d5db; border-radius: 5px;
+      font-size: 0.9rem; font-family: inherit; background: #fff;
+      width: 100%; box-sizing: border-box;
+    }
+    .modal-field textarea { resize: vertical; }
+    .modal-actions { display: flex; align-items: center; gap: 0.75rem; padding-top: 0.25rem; }
+    .btn-save {
+      font-family: inherit; font-size: 0.85rem; padding: 0.5rem 1.25rem;
+      border-radius: 5px; border: none; cursor: pointer;
+      background: #ab377a; color: #fff; font-weight: 500;
     }
     .btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-cancel {
+      font-family: inherit; font-size: 0.85rem; padding: 0.5rem 1rem;
+      border-radius: 5px; border: 1px solid #d1d5db; cursor: pointer;
+      background: #fff; color: #374151;
+    }
+    .btn-cancel:hover { background: #f3f4f6; }
     .save-ok  { color: #065f46; font-weight: 600; font-size: 0.85rem; }
     .save-err { color: #b00020; font-size: 0.85rem; }
 
