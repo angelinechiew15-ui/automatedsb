@@ -275,7 +275,6 @@ interface DisplayRow extends GroupedSbRow {
       background: #ab377a; color: #fff; font-weight: 600;
       position: sticky; top: 0; z-index: 1; white-space: nowrap;
     }
-    thead tr:nth-child(2) th { top: 40px; }
     .col-grp { text-align: center; background: #7b2257; }
     .col-fy  { background: #ab377a; }
     tbody tr:hover { background: #f9fafb; }
