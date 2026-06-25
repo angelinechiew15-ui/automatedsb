@@ -390,6 +390,9 @@ export class WorkshopSummary implements OnInit {
     return result.length > 0 ? result : fys.slice(0, 2);
   });
 
+  /** The first (current) FY whose values should be divided by 4 */
+  protected readonly currentFy = computed(() => this.activeFys()[0] ?? '');
+
   // ── Grouped rows ──────────────────────────────────────────────────────────
   private readonly groupedRows = computed((): GroupedSbRow[] => {
     const map = new Map<string, GroupedSbRow>();
@@ -432,7 +435,9 @@ export class WorkshopSummary implements OnInit {
       const tsTotals: Record<string, number> = {};
       const rtuTotals: Record<string, number> = {};
       const costTotals: Record<string, number> = {};
+      const curFy = this.currentFy();
       for (const fy of fys) {
+        const divisor = fy === curFy ? 4 : 1;
         let ts = 0, rtu = 0, cost = 0;
         for (let j = i; j < i + divCount; j++) {
           const d = rows[j].fyDemands[fy];
@@ -440,7 +445,7 @@ export class WorkshopSummary implements OnInit {
           if (d?.rtuDemand != null) rtu  += d.rtuDemand;
           if (d?.costDemand != null) cost += d.costDemand;
         }
-        tsTotals[fy] = ts; rtuTotals[fy] = rtu; costTotals[fy] = cost;
+        tsTotals[fy] = ts / divisor; rtuTotals[fy] = rtu / divisor; costTotals[fy] = cost / divisor;
       }
 
       // insert total row at top of each div group; it owns the Div merged cell
@@ -586,7 +591,9 @@ export class WorkshopSummary implements OnInit {
   protected fyDemand(row: GroupedSbRow, fy: string, type: 'ts' | 'rtu' | 'cost'): number | null {
     const d = row.fyDemands[fy];
     if (!d) return null;
-    return type === 'ts' ? d.tsDemand : type === 'rtu' ? d.rtuDemand : d.costDemand;
+    const raw = type === 'ts' ? d.tsDemand : type === 'rtu' ? d.rtuDemand : d.costDemand;
+    if (raw == null) return null;
+    return fy === this.currentFy() ? raw / 4 : raw;
   }
 
   protected badgeClass(status: string): string {
@@ -608,9 +615,9 @@ export class WorkshopSummary implements OnInit {
     ];
     const data = this.filteredGroupedRows().map(r => [
       r.divName, r.subDiv, r.summary, r.sb, r.sbStatus, r.comment,
-      ...fys.map(f => r.fyDemands[f]?.tsDemand ?? null),
-      ...fys.map(f => r.fyDemands[f]?.rtuDemand ?? null),
-      ...fys.map(f => r.fyDemands[f]?.costDemand ?? null),
+      ...fys.map(f => { const v = r.fyDemands[f]?.tsDemand  ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
+      ...fys.map(f => { const v = r.fyDemands[f]?.rtuDemand ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
+      ...fys.map(f => { const v = r.fyDemands[f]?.costDemand ?? null; return v == null ? null : (f === this.currentFy() ? v / 4 : v); }),
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
     const wb = XLSX.utils.book_new();
