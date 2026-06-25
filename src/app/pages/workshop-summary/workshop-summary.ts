@@ -180,13 +180,13 @@ interface DisplayRow extends GroupedSbRow {
                     <td [attr.rowspan]="row.divRowspan" class="col-div td-merged">{{ row.divName }}</td>
                     <td colspan="5" class="col-total-label">Total</td>
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num total-num">{{ row.tsTotals[fy] | number:'1.0-2' }}</td>
+                      <td class="col-num total-num">{{ row.tsTotals[fy] | number:'1.1-1' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num total-num">{{ row.rtuTotals[fy] | number:'1.0-2' }}</td>
+                      <td class="col-num total-num">{{ row.rtuTotals[fy] | number:'1.1-1' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num total-num">{{ row.costTotals[fy] | number:'1.0-2' }}</td>
+                      <td class="col-num total-num">{{ row.costTotals[fy] | number:'1.1-1' }}</td>
                     }
                   </tr>
                 } @else {
@@ -205,13 +205,13 @@ interface DisplayRow extends GroupedSbRow {
                     </td>
                     <td class="col-text">{{ row.comment }}</td>
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.0-2') : '\u2014' }}</td>
+                      <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.1-1') : '\u2014' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.0-2') : '\u2014' }}</td>
+                      <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.1-1') : '\u2014' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.0-2') : '\u2014' }}</td>
+                      <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.1-1') : '\u2014' }}</td>
                     }
                   </tr>
                 }
