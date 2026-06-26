@@ -139,11 +139,11 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
       margin-top: 0.75rem; overflow-x: auto; overflow-y: auto; max-height: 70vh;
       border: 1px solid #d9dde3; border-radius: 8px; background: #fff;
     }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 0.5rem 0.6rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.78rem; white-space: nowrap; min-width: 85px; }
+    table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    th, td { padding: 0.5rem 0.6rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.78rem; white-space: nowrap; width: calc(100% / 11); }
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
-      position: sticky; top: 0; z-index: 2; min-width: 85px;
+      position: sticky; top: 0; z-index: 2; width: calc(100% / 11);
       cursor: pointer; user-select: none; transition: background 0.2s ease;
     }
     thead th:hover { background: #8a2d63; }
