@@ -126,6 +126,7 @@ export interface LabSummaryFilterOptions {
 }
 
 export interface SbApprovalRow {
+  approvalId: number;
   horizon: string;
   sbName: string;
   publishDate: string | null;
@@ -137,6 +138,11 @@ export interface SbApprovalRow {
   sbStatus: string;
   releaseDate: string | null;
   conditionalRelease: string;
+}
+
+export interface ConditionalReleaseUpdateRequest {
+  approvalId: number;
+  remark: string;
 }
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
@@ -226,5 +232,10 @@ export class ServiceBundleService {
     if (sbId) params = params.set('sbId', sbId);
     if (status) params = params.set('status', status);
     return this.http.get<SbApprovalRow[]>(`${this.base}/sb-approval/overview`, { params });
+  }
+
+  /** Update conditional release remark for an onhold SB approval row. */
+  updateConditionalReleaseRemark(payload: ConditionalReleaseUpdateRequest): Observable<{ success: boolean; approvalId: number }> {
+    return this.http.post<{ success: boolean; approvalId: number }>(`${this.base}/sb-approval/conditional-release`, payload);
   }
 }

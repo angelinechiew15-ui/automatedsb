@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/service-bundle.service';
 
 @Component({
@@ -55,6 +56,9 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
           <button class="btn-search" (click)="loadData()" [disabled]="!selectedHorizon() || loading()">
             &#128269; Search
           </button>
+          <button class="btn-export" (click)="exportToExcel()" [disabled]="sortedFilteredRows().length === 0">
+            &#128190; Export to Excel
+          </button>
         </div>
       </div>
 
@@ -99,11 +103,56 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
                   <td>{{ r.approvalDate }}</td>
                   <td>{{ r.sbStatus }}</td>
                   <td>{{ r.releaseDate }}</td>
-                  <td>{{ r.conditionalRelease }}</td>
+                  <td>
+                    @if (canShowConditionalRelease(r)) {
+                      <button class="btn-conditional" (click)="openConditionalReleaseModal(r)">Conditional Release</button>
+                    }
+                    @if (r.conditionalRelease) {
+                      <div class="conditional-text">{{ r.conditionalRelease }}</div>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
           </table>
+        </div>
+      }
+
+      @if (showConditionalModal()) {
+        <div class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Conditional Release Form">
+          <div class="modal-panel">
+            <h3>Conditional Release</h3>
+
+            <div class="modal-row">
+              <label>Horizon</label>
+              <input type="text" [value]="selectedHorizonName() || selectedHorizon()" readonly>
+            </div>
+
+            <div class="modal-row">
+              <label>SB Name</label>
+              <input type="text" [value]="selectedConditionalRow()?.sbName ?? ''" readonly>
+            </div>
+
+            <div class="modal-row">
+              <label>Remark</label>
+              <textarea
+                rows="4"
+                [ngModel]="conditionalRemark()"
+                (ngModelChange)="conditionalRemark.set($event)"
+                placeholder="Enter conditional release remark"></textarea>
+            </div>
+
+            @if (conditionalModalError()) {
+              <p class="status status-error">{{ conditionalModalError() }}</p>
+            }
+
+            <div class="modal-actions">
+              <button class="btn-search" (click)="closeConditionalReleaseModal()" [disabled]="submittingConditional()">Cancel</button>
+              <button class="btn-export" (click)="submitConditionalRelease()" [disabled]="submittingConditional()">
+                {{ submittingConditional() ? 'Submitting...' : 'Submit' }}
+              </button>
+            </div>
+          </div>
         </div>
       }
     </section>
@@ -133,6 +182,19 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     }
     .btn-search:hover:not(:disabled) { background: #f9eef5; }
     .btn-search:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-export {
+      font-family: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem;
+      border-radius: 5px; border: 1px solid transparent; cursor: pointer;
+      background: #ab377a; color: #fff; white-space: nowrap;
+    }
+    .btn-export:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-conditional {
+      font-family: inherit; font-size: 0.74rem; padding: 0.3rem 0.5rem;
+      border-radius: 4px; border: 1px solid #ab377a; cursor: pointer;
+      background: #fff; color: #ab377a;
+    }
+    .btn-conditional:hover { background: #f9eef5; }
+    .conditional-text { margin-top: 0.35rem; color: #374151; white-space: normal; }
     .status { margin-top: 0.75rem; color: #6b7280; }
     .status-error { color: #b00020; }
     .table-wrap {
@@ -156,6 +218,33 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     .badge-rejected { background: #fee2e2; color: #991b1b; }
     .badge-pending  { background: #fef3c7; color: #92400e; }
     .badge-default  { background: #e5e7eb; color: #374151; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 50;
+      padding: 1rem;
+    }
+    .modal-panel {
+      width: min(540px, 100%); background: #fff; border-radius: 10px;
+      border: 1px solid #e5e7eb; padding: 1rem 1.1rem;
+      box-shadow: 0 16px 36px rgba(17, 24, 39, 0.24);
+    }
+    .modal-panel h3 {
+      margin: 0 0 0.75rem; color: #111827; font-size: 1.06rem;
+    }
+    .modal-row {
+      display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem;
+    }
+    .modal-row label { font-weight: 600; font-size: 0.82rem; color: #374151; }
+    .modal-row input,
+    .modal-row textarea {
+      width: 100%; font: inherit; font-size: 0.88rem; color: #111827;
+      border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.6rem;
+      background: #fff;
+    }
+    .modal-row input[readonly] { background: #f9fafb; }
+    .modal-actions {
+      display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem;
+    }
   `]
 })
 export class SbApproval implements OnInit {
@@ -174,6 +263,11 @@ export class SbApproval implements OnInit {
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showConditionalModal = signal(false);
+  protected readonly selectedConditionalRow = signal<SbApprovalRow | null>(null);
+  protected readonly conditionalRemark = signal('');
+  protected readonly conditionalModalError = signal<string | null>(null);
+  protected readonly submittingConditional = signal(false);
 
   protected readonly sortColumn = signal<string>('');
   protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
@@ -252,6 +346,77 @@ export class SbApproval implements OnInit {
       error: () => {
         this.loading.set(false);
         this.error.set('Failed to load SB approval data.');
+      },
+    });
+  }
+
+  protected exportToExcel(): void {
+    const exportRows = this.sortedFilteredRows().map((r) => ({
+      Horizon: this.selectedHorizonName() || this.selectedHorizon(),
+      'SB Name': r.sbName,
+      'Publish Date': r.publishDate ?? '',
+      'Customer Group': r.customerGroup,
+      'Customer Name': r.customerName,
+      'Approval Status': r.approvalStatus,
+      Reason: r.reason,
+      'Approval Date': r.approvalDate ?? '',
+      'SB Status': r.sbStatus,
+      'Release Date': r.releaseDate ?? '',
+      'Conditional Release': r.conditionalRelease ?? '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'SB Approval');
+    const suffix = (this.selectedHorizonName() || this.selectedHorizon() || 'all').replace(/\s+/g, '_');
+    XLSX.writeFile(workbook, `sb-approval-${suffix}.xlsx`);
+  }
+
+  protected canShowConditionalRelease(row: SbApprovalRow): boolean {
+    return (row.sbStatus ?? '').trim().toLowerCase() === 'onhold';
+  }
+
+  protected openConditionalReleaseModal(row: SbApprovalRow): void {
+    this.selectedConditionalRow.set(row);
+    this.conditionalRemark.set(row.conditionalRelease ?? '');
+    this.conditionalModalError.set(null);
+    this.showConditionalModal.set(true);
+  }
+
+  protected closeConditionalReleaseModal(): void {
+    this.showConditionalModal.set(false);
+    this.selectedConditionalRow.set(null);
+    this.conditionalRemark.set('');
+    this.conditionalModalError.set(null);
+    this.submittingConditional.set(false);
+  }
+
+  protected submitConditionalRelease(): void {
+    const row = this.selectedConditionalRow();
+    if (!row || !row.approvalId) {
+      this.conditionalModalError.set('Missing approval row reference.');
+      return;
+    }
+
+    this.submittingConditional.set(true);
+    this.conditionalModalError.set(null);
+    this.api.updateConditionalReleaseRemark({
+      approvalId: row.approvalId,
+      remark: this.conditionalRemark().trim(),
+    }).subscribe({
+      next: () => {
+        const nextRows = this.rows().map((r) =>
+          r.approvalId === row.approvalId
+            ? { ...r, conditionalRelease: this.conditionalRemark().trim() }
+            : r,
+        );
+        this.rows.set(nextRows);
+        this.submittingConditional.set(false);
+        this.closeConditionalReleaseModal();
+      },
+      error: () => {
+        this.submittingConditional.set(false);
+        this.conditionalModalError.set('Failed to update conditional release remark.');
       },
     });
   }
