@@ -71,21 +71,21 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
           <table>
             <thead>
               <tr>
-                <th>Horizon</th>
-                <th>SB Name</th>
-                <th>Publish Date</th>
-                <th>Customer Group</th>
-                <th>Customer Name</th>
-                <th>Approval Status</th>
-                <th>Reason</th>
-                <th>Approval Date</th>
-                <th>SB Status</th>
-                <th>Release Date</th>
-                <th>Conditional Release</th>
+                <th (click)="sortByColumn('horizon')" style="cursor: pointer;">Horizon{{ getSortIcon('horizon') }}</th>
+                <th (click)="sortByColumn('sbName')" style="cursor: pointer;">SB Name{{ getSortIcon('sbName') }}</th>
+                <th (click)="sortByColumn('publishDate')" style="cursor: pointer;">Publish Date{{ getSortIcon('publishDate') }}</th>
+                <th (click)="sortByColumn('customerGroup')" style="cursor: pointer;">Customer Group{{ getSortIcon('customerGroup') }}</th>
+                <th (click)="sortByColumn('customerName')" style="cursor: pointer;">Customer Name{{ getSortIcon('customerName') }}</th>
+                <th (click)="sortByColumn('approvalStatus')" style="cursor: pointer;">Approval Status{{ getSortIcon('approvalStatus') }}</th>
+                <th (click)="sortByColumn('reason')" style="cursor: pointer;">Reason{{ getSortIcon('reason') }}</th>
+                <th (click)="sortByColumn('approvalDate')" style="cursor: pointer;">Approval Date{{ getSortIcon('approvalDate') }}</th>
+                <th (click)="sortByColumn('sbStatus')" style="cursor: pointer;">SB Status{{ getSortIcon('sbStatus') }}</th>
+                <th (click)="sortByColumn('releaseDate')" style="cursor: pointer;">Release Date{{ getSortIcon('releaseDate') }}</th>
+                <th (click)="sortByColumn('conditionalRelease')" style="cursor: pointer;">Conditional Release{{ getSortIcon('conditionalRelease') }}</th>
               </tr>
             </thead>
             <tbody>
-              @for (r of rows(); track r.horizon + '|' + r.sbName + '|' + r.customerName) {
+              @for (r of sortedFilteredRows(); track r.horizon + '|' + r.sbName + '|' + r.customerName) {
                 <tr>
                   <td>{{ r.horizon }}</td>
                   <td>{{ r.sbName }}</td>
@@ -144,7 +144,9 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
       position: sticky; top: 0; z-index: 2; min-width: 85px;
+      cursor: pointer; user-select: none; transition: background 0.2s ease;
     }
+    thead th:hover { background: #8a2d63; }
     tbody tr:hover { background: #f9fafb; }
     .badge {
       display: inline-block; padding: 0.2rem 0.5rem;
@@ -172,9 +174,28 @@ export class SbApproval implements OnInit {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly sortColumn = signal<string>('');
+  protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
+
   protected readonly statusOptions = computed(() => {
     const unique = [...new Set(this.rows().map(r => r.approvalStatus).filter(Boolean))].sort();
     return unique.length ? unique : ['APPROVED', 'REJECTED', 'PENDING', 'NO_STATUS'];
+  });
+
+  protected readonly sortedFilteredRows = computed(() => {
+    const horizon = this.selectedHorizon();
+    let filtered = this.rows().filter(r => !horizon || r.horizon === horizon);
+
+    const col = this.sortColumn();
+    if (!col) return filtered;
+
+    const dir = this.sortDirection();
+    return filtered.sort((a, b) => {
+      const aVal = (a as any)[col] ?? '';
+      const bVal = (b as any)[col] ?? '';
+      const cmp = String(aVal).localeCompare(String(bVal));
+      return dir === 'asc' ? cmp : -cmp;
+    });
   });
 
   ngOnInit(): void {
@@ -234,5 +255,19 @@ export class SbApproval implements OnInit {
     if (s.includes('reject')) return 'badge badge-rejected';
     if (s.includes('pending') || s.includes('no_status')) return 'badge badge-pending';
     return 'badge badge-default';
+  }
+
+  protected sortByColumn(col: string): void {
+    if (this.sortColumn() === col) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(col);
+      this.sortDirection.set('asc');
+    }
+  }
+
+  protected getSortIcon(col: string): string {
+    if (this.sortColumn() !== col) return ' ⇅';
+    return this.sortDirection() === 'asc' ? ' ↑' : ' ↓';
   }
 }
