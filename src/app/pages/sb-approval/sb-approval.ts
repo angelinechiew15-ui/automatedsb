@@ -87,7 +87,7 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
             <tbody>
               @for (r of sortedFilteredRows(); track r.horizon + '|' + r.sbName + '|' + r.customerName) {
                 <tr>
-                  <td>{{ r.horizon }}</td>
+                  <td>{{ selectedHorizonName() }}</td>
                   <td>{{ r.sbName }}</td>
                   <td>{{ r.publishDate }}</td>
                   <td>{{ r.customerGroup }}</td>
@@ -166,7 +166,8 @@ export class SbApproval implements OnInit {
   protected readonly sbOptions = signal<LookupItem[]>([]);
   protected readonly rows = signal<SbApprovalRow[]>([]);
 
-  protected readonly selectedHorizon = signal('');
+  protected readonly selectedHorizon = signal('');        // Horizon ID (numeric)
+  protected readonly selectedHorizonName = signal('');    // Horizon name for display
   protected readonly selectedOwnerId = signal('');
   protected readonly selectedSbId = signal('');
   protected readonly selectedStatus = signal('');
@@ -202,7 +203,10 @@ export class SbApproval implements OnInit {
     this.api.listHorizons().subscribe({
       next: (data) => {
         this.horizons.set(data);
-        if (data.length) this.selectedHorizon.set(data[0].value);
+        if (data.length) {
+          this.selectedHorizon.set(data[0].value);    // Set horizon ID
+          this.selectedHorizonName.set(data[0].text); // Set horizon name
+        }
       },
       error: () => this.error.set('Failed to load horizons.'),
     });
@@ -215,6 +219,9 @@ export class SbApproval implements OnInit {
 
   protected onHorizonChange(value: string): void {
     this.selectedHorizon.set(value);
+    // Find and set the horizon name for display
+    const selected = this.horizons().find(h => h.value === value);
+    this.selectedHorizonName.set(selected?.text ?? '');
     this.rows.set([]);
   }
 
