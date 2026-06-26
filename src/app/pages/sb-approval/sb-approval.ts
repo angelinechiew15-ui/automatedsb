@@ -202,11 +202,25 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
       border: 1px solid #d9dde3; border-radius: 8px; background: #fff;
     }
     table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-    th, td { padding: 0.5rem 0.6rem; border: 1px solid #e5e7eb; text-align: left; font-size: 0.78rem; white-space: nowrap; width: calc(100% / 11); }
+    th, td {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 0.78rem;
+      width: calc(100% / 11);
+      vertical-align: top;
+      line-height: 1.35;
+    }
+    td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     thead th {
       background: #ab377a; color: #fff; font-weight: 600;
       position: sticky; top: 0; z-index: 2; width: calc(100% / 11);
       cursor: pointer; user-select: none; transition: background 0.2s ease;
+      white-space: normal;
     }
     thead th:hover { background: #8a2d63; }
     tbody tr:hover { background: #f9fafb; }
