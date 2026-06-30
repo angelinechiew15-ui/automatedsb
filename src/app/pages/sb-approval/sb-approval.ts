@@ -292,7 +292,7 @@ export class SbApproval implements OnInit {
   });
 
   protected readonly sortedFilteredRows = computed(() => {
-    const horizon = this.selectedHorizon();
+    const horizon = this.selectedHorizonName();
     let filtered = this.rows().filter(r => !horizon || r.horizon === horizon);
 
     const col = this.sortColumn();
@@ -350,9 +350,11 @@ export class SbApproval implements OnInit {
   protected loadData(): void {
     const h = this.selectedHorizon();
     if (!h) return;
+    // The approval data is keyed on the horizon name (e.g. "26-06"), not the id.
+    const horizon = this.selectedHorizonName() || this.horizons().find(x => x.value === h)?.text || h;
     this.loading.set(true);
     this.error.set(null);
-    this.api.getSbApprovalOverview(h, this.selectedOwnerId(), this.selectedSbId(), this.selectedStatus()).subscribe({
+    this.api.getSbApprovalOverview(horizon, this.selectedOwnerId(), this.selectedSbId(), this.selectedStatus()).subscribe({
       next: (data) => {
         this.rows.set(data ?? []);
         this.loading.set(false);

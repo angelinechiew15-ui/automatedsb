@@ -351,13 +351,16 @@ export class LabCost implements OnInit {
     const h = this.selectedHorizon();
     if (!h) return;
 
+    // The lab cost view is keyed on the horizon name (e.g. "26-06"), not the id.
+    const horizon = this.horizons().find(x => x.value === h)?.text ?? h;
+
     // Apply selected filters only when Search is clicked.
     this.appliedSb.set(this.selectedSb());
     this.appliedLoc.set(this.selectedLoc());
 
     this.loading.set(true);
     this.error.set(null);
-    this.api.getLabCostQtrAvg(h).subscribe({
+    this.api.getLabCostQtrAvg(horizon).subscribe({
       next: (data) => {
         this.allRows.set(data);
         this.loading.set(false);

@@ -421,9 +421,13 @@ export class LabSummary implements OnInit {
   }
 
   private loadData(): void {
+    const h = this.selectedHorizon();
+    if (!h) return;
+    // The lab summary view is keyed on the horizon name (e.g. "26-06"), not the id.
+    const horizon = this.horizons().find(x => x.value === h)?.text ?? h;
     this.loading.set(true);
     this.error.set(null);
-    this.api.getLabSummary(this.selectedHorizon()).subscribe({
+    this.api.getLabSummary(horizon).subscribe({
       next: (data) => {
         this.allRows.set(data);
         this.loading.set(false);

@@ -85,6 +85,12 @@ export class ServiceBundle implements OnInit {
     return !!this.selectedOwner && !!this.selectedSb && !!this.selectedHorizon;
   }
 
+  // The dashboard/charts data is keyed on the horizon name (e.g. "26-06"),
+  // while the dropdown value is the horizon id. Resolve the name to send.
+  private horizonName(): string {
+    return this.horizons().find((h) => h.value === this.selectedHorizon)?.text ?? this.selectedHorizon;
+  }
+
   ngOnInit(): void {
     this.api.listOwners().subscribe({
       next: (data) => this.owners.set(data),
@@ -141,7 +147,7 @@ export class ServiceBundle implements OnInit {
     this.tabs.set([]);
     this.chartCache.set({});
 
-    this.api.getDashboard(this.selectedSb, this.selectedHorizon).subscribe({
+    this.api.getDashboard(this.selectedSb, this.horizonName()).subscribe({
       next: (data) => {
         this.buildTabs(data);
         this.searching.set(false);
@@ -187,7 +193,7 @@ export class ServiceBundle implements OnInit {
       return;
     }
     this.loadingCharts.set(true);
-    this.api.getCharts(this.selectedSb, this.selectedHorizon, tab.loc).subscribe({
+    this.api.getCharts(this.selectedSb, this.horizonName(), tab.loc).subscribe({
       next: (charts) => {
         this.chartCache.update((c) => ({ ...c, [id]: charts }));
         this.loadingCharts.set(false);
