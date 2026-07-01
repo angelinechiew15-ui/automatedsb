@@ -263,6 +263,8 @@ interface SummaryCard {
   `],
 })
 export class CostKeyOverview implements OnInit {
+  private static readonly cutoffHorizon = '25-09';
+
   private readonly costKeyApi = inject(CostKeyService);
   private readonly bundleApi = inject(ServiceBundleService);
 
@@ -289,7 +291,20 @@ export class CostKeyOverview implements OnInit {
       return [];
     }
 
-    return list.slice(selectedIndex + 1, selectedIndex + 5);
+    const horizons: LookupItem[] = [];
+    for (let index = selectedIndex + 1; index < list.length; index++) {
+      const horizon = list[index];
+      if (!horizon?.text) {
+        continue;
+      }
+
+      horizons.push(horizon);
+      if (horizon.text === CostKeyOverview.cutoffHorizon) {
+        break;
+      }
+    }
+
+    return horizons;
   });
 
   protected readonly filteredRows = computed(() => {
