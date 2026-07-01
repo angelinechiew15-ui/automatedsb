@@ -227,18 +227,19 @@
         </section>
 
         <section class="sb-category">
-          <h3 class="sb-category-title">Detailed Service Bundle Information @if (sbName()) {<span>- {{ sbName() }}</span>}</h3>
           <div class="sb-category-body">
             @if (loadingDetails()) {
               <p class="sb-hint">Loading detailed service bundle information…</p>
             } @else if (detailInfo(); as info) {
-              <div class="sb-detail-toolbar">
-                <button type="button" class="sb-add-row" (click)="addDetailRow()">Add Row</button>
-              </div>
-
               <div class="sb-scroll">
                 <table class="sb-table sb-table-wide sb-detail-table">
                   <thead>
+                    <tr class="sb-title-row">
+                      <th colspan="4">Detailed Service Bundle Information @if (sbName()) {<span>- {{ sbName() }}</span>}</th>
+                      <th class="sb-title-action-cell">
+                        <button type="button" class="sb-add-row" (click)="addDetailRow()">Add Row</button>
+                      </th>
+                    </tr>
                     <tr>
                       <th>RFC</th>
                       <th>Test Start per Month</th>
@@ -275,8 +276,12 @@
 
               <div class="sb-scope-grid">
                 <table id="res" class="sb-table sb-table-wide sb-scope-table">
+                  <thead>
+                    <tr class="sb-title-row">
+                      <th colspan="4">Scope and Responsibilities of this Service Bundle</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    <tr><td colspan="4" class="sb-scope-title">Scope and Responsibilities of this Service Bundle</td></tr>
                     <tr>
                       <td class="tablegreen">Valid for Client Corridor(s)</td>
                       <td>{{ dashboard()?.clientCorridors?.join(', ') }}</td>

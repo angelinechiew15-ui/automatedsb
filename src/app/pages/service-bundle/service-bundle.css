@@ -160,6 +160,21 @@
   font-weight: 600;
 }
 
+.sb-title-row th,
+.sb-title-row td {
+  background: #556b2f;
+  color: #fff;
+  font-weight: 700;
+}
+
+.sb-title-row th {
+  text-align: left;
+}
+
+.sb-title-action-cell {
+  text-align: right;
+}
+
 /* Header colours match each category's chart bar colour. */
 .sb-head-ts thead th {
   background: #ab377a;
@@ -194,12 +209,6 @@
   word-break: break-word;
 }
 
-.sb-detail-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.75rem;
-}
-
 .sb-add-row,
 .sb-save-row {
   border: none;
@@ -210,8 +219,9 @@
 }
 
 .sb-add-row {
-  background: #0a8276;
+  background: transparent;
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
 .sb-save-row {
@@ -248,4 +258,10 @@
 
 .sb-detail-action-cell .sb-save-row {
   width: 100%;
+}
+
+.sb-scope-table thead th {
+  background: #556b2f;
+  color: #fff;
+  text-align: left;
 }
