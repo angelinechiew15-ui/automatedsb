@@ -20,8 +20,11 @@ export class CostKeyService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBase;
 
-  getOverview(fy = '', loc = '', sb = ''): Observable<CostKeyOverviewRow[]> {
+  getOverview(horizon = '', fy = '', loc = '', sb = ''): Observable<CostKeyOverviewRow[]> {
     let params = new HttpParams();
+    if (horizon) {
+      params = params.set('horizon', horizon);
+    }
     if (fy) {
       params = params.set('fy', fy);
     }

@@ -1,0 +1,463 @@
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
+import { CostKeyOverviewRow, CostKeyService } from '../../services/cost-key.service';
+
+interface SummaryCard {
+  label: string;
+  value: string;
+}
+
+interface OverviewRow extends CostKeyOverviewRow {
+  historicalCosts: Record<string, number | null>;
+}
+
+@Component({
+  selector: 'app-cost-key-overview',
+  imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="page">
+      <div class="toolbar">
+        <div class="field">
+          <label for="horizon-filter">Horizon</label>
+          <select id="horizon-filter" [ngModel]="selectedHorizon()" (ngModelChange)="onHorizonChange($event)">
+            <option value="">-- Select Horizon --</option>
+            @for (horizon of horizons(); track horizon.text) {
+              <option [value]="horizon.text">{{ horizon.text }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="fy-filter">FY</label>
+          <select id="fy-filter" [ngModel]="selectedFy()" (ngModelChange)="selectedFy.set($event)">
+            <option value="">All</option>
+            @for (fy of fyOptions(); track fy) {
+              <option [value]="fy">{{ fy }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="loc-filter">Location</label>
+          <select id="loc-filter" [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)">
+            <option value="">All</option>
+            @for (loc of locOptions(); track loc) {
+              <option [value]="loc">{{ loc }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="sb-filter">Service Bundle</label>
+          <select id="sb-filter" [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
+            <option value="">All</option>
+            @for (sb of sbOptions(); track sb) {
+              <option [value]="sb">{{ sb }}</option>
+            }
+          </select>
+        </div>
+
+        <button class="btn-refresh" type="button" (click)="loadData()" [disabled]="loading() || !selectedHorizon()">
+          {{ loading() ? 'Refreshing...' : 'Refresh overview' }}
+        </button>
+      </div>
+
+      <div class="summary-grid">
+        @for (card of summaryCards(); track card.label) {
+          <article class="summary-card">
+            <span class="summary-label">{{ card.label }}</span>
+            <strong class="summary-value">{{ card.value }}</strong>
+          </article>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="status">Loading cost key overview...</p>
+      } @else if (error()) {
+        <p class="status status-error">{{ error() }}</p>
+      } @else if (!rows().length) {
+        <p class="status">No cost key data returned from the API.</p>
+      } @else if (!filteredRows().length) {
+        <p class="status">No rows match the selected filters.</p>
+      } @else {
+        <div class="table-wrap" role="region" aria-label="Cost key overview table" tabindex="0">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Location</th>
+                <th scope="col">Service Bundle</th>
+                <th scope="col">Client Corridor</th>
+                <th scope="col">WBS Element</th>
+                <th scope="col" class="num-h">PL key</th>
+                <th scope="col" class="num-h">Cost (k EUR)</th>
+                <th scope="col" class="num-h">Key</th>
+                @for (horizon of pastHorizons(); track horizon.text) {
+                  <th scope="col" class="num-h">{{ horizon.text }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filteredRows(); track row.fy + '|' + row.loc + '|' + row.serviceBundle + '|' + row.clientCorridor + '|' + row.wbsElement) {
+                <tr>
+                  <td>{{ row.loc }}</td>
+                  <td>{{ row.serviceBundle }}</td>
+                  <td>{{ row.clientCorridor || '-' }}</td>
+                  <td>{{ row.wbsElement || '-' }}</td>
+                  <td class="num">{{ formatPercent(row.ccPercent) }}</td>
+                  <td class="num">{{ formatAmount(row.costKeur) }}</td>
+                  <td class="num">{{ formatKey(row.key) }}</td>
+                  @for (horizon of pastHorizons(); track horizon.text) {
+                    <td class="num">{{ formatAmount(row.historicalCosts[horizon.text]) }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  `,
+  styles: [`
+    .page {
+      padding: 1.5rem 1.5rem 1.5rem 3rem;
+      font-family: 'Source Sans Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.92rem;
+      color: #1f2937;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 190px;
+    }
+
+    .field label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #374151;
+    }
+
+    .field select {
+      padding: 0.48rem 0.65rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .btn-refresh {
+      border: 1px solid #8b2f62;
+      background: #8b2f62;
+      color: #fff;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-refresh:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 6px 16px rgba(31, 41, 55, 0.04);
+    }
+
+    .summary-label {
+      display: block;
+      font-size: 0.78rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+      font-weight: 700;
+    }
+
+    .summary-value {
+      font-size: 1.1rem;
+      color: #111827;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      color: #6b7280;
+    }
+
+    .status-error {
+      color: #b00020;
+    }
+
+    .table-wrap {
+      margin-top: 1rem;
+      overflow: auto;
+      max-height: 70vh;
+      border: 1px solid #d9dde3;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(31, 41, 55, 0.05);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1600px;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 0.8rem;
+      vertical-align: top;
+      line-height: 1.35;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    thead th {
+      background: #8b2f62;
+      color: #fff;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    tbody tr:hover {
+      background: #faf5f8;
+    }
+
+    .num-h,
+    .num {
+      text-align: right;
+    }
+  `],
+})
+export class CostKeyOverview implements OnInit {
+  private readonly costKeyApi = inject(CostKeyService);
+  private readonly bundleApi = inject(ServiceBundleService);
+
+  protected readonly horizons = signal<LookupItem[]>([]);
+  protected readonly rows = signal<OverviewRow[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  protected readonly selectedHorizon = signal('');
+  protected readonly selectedFy = signal('');
+  protected readonly selectedLoc = signal('');
+  protected readonly selectedSb = signal('');
+
+  protected readonly fyOptions = computed(() => [...new Set(this.rows().map((row) => row.fy).filter(Boolean))].sort());
+  protected readonly locOptions = computed(() => [...new Set(this.rows().map((row) => row.loc).filter(Boolean))].sort());
+  protected readonly sbOptions = computed(() => [...new Set(this.rows().map((row) => row.serviceBundle).filter(Boolean))].sort());
+
+  protected readonly pastHorizons = computed(() => {
+    const selected = this.selectedHorizon();
+    const list = this.horizons();
+    const selectedIndex = list.findIndex((horizon) => horizon.text === selected);
+
+    if (selectedIndex < 0) {
+      return [];
+    }
+
+    return list.slice(selectedIndex + 1, selectedIndex + 5);
+  });
+
+  protected readonly filteredRows = computed(() => {
+    const fy = this.selectedFy();
+    const loc = this.selectedLoc();
+    const sb = this.selectedSb();
+
+    return this.rows()
+      .filter((row) => (!fy || row.fy === fy) && (!loc || row.loc === loc) && (!sb || row.serviceBundle === sb))
+      .slice()
+      .sort((a, b) => {
+        const byFy = a.fy.localeCompare(b.fy);
+        if (byFy !== 0) {
+          return byFy;
+        }
+
+        const byLoc = a.loc.localeCompare(b.loc);
+        if (byLoc !== 0) {
+          return byLoc;
+        }
+
+        const bySb = a.serviceBundle.localeCompare(b.serviceBundle);
+        if (bySb !== 0) {
+          return bySb;
+        }
+
+        const byCorridor = a.clientCorridor.localeCompare(b.clientCorridor);
+        if (byCorridor !== 0) {
+          return byCorridor;
+        }
+
+        return a.wbsElement.localeCompare(b.wbsElement);
+      });
+  });
+
+  protected readonly summaryCards = computed<SummaryCard[]>(() => {
+    const rows = this.filteredRows();
+    const totalCost = rows.reduce((sum, row) => sum + (row.costKeur ?? 0), 0);
+    const averageKey = rows.length
+      ? rows.reduce((sum, row) => sum + (row.key ?? 0), 0) / rows.length
+      : 0;
+
+    return [
+      { label: 'Selected Horizon', value: this.selectedHorizon() || 'All' },
+      { label: 'Selected Location', value: this.selectedLoc() || 'All' },
+      { label: 'Total Cost (k EUR)', value: this.formatAmount(totalCost) },
+      { label: 'Average Key', value: this.formatKey(averageKey) },
+    ];
+  });
+
+  ngOnInit(): void {
+    this.bundleApi.listHorizons().subscribe({
+      next: (data) => {
+        this.horizons.set(data ?? []);
+        if (data?.length) {
+          this.selectedHorizon.set(data[0].text);
+          this.loadData();
+        }
+      },
+      error: () => this.error.set('Failed to load horizons.'),
+    });
+  }
+
+  protected onHorizonChange(value: string): void {
+    this.selectedHorizon.set(value);
+    this.loadData();
+  }
+
+  protected loadData(): void {
+    const horizon = this.selectedHorizon();
+    if (!horizon) {
+      return;
+    }
+
+    const historyHorizons = this.pastHorizons().map((item) => item.text);
+    this.loading.set(true);
+    this.error.set(null);
+
+    const requests = [
+      this.costKeyApi.getOverview(horizon, this.selectedFy(), this.selectedLoc(), this.selectedSb()),
+      ...historyHorizons.map((pastHorizon) =>
+        this.costKeyApi.getOverview(pastHorizon, this.selectedFy(), this.selectedLoc(), this.selectedSb()),
+      ),
+    ];
+
+    forkJoin(requests).subscribe({
+      next: ([currentRows, ...pastRows]) => {
+        const historicalByHorizon = new Map<string, CostKeyOverviewRow[]>();
+        historyHorizons.forEach((pastHorizon, index) => {
+          historicalByHorizon.set(pastHorizon, pastRows[index] ?? []);
+        });
+
+        this.rows.set(this.mergeRows(currentRows ?? [], historicalByHorizon));
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.error.set('Failed to load cost key overview.');
+      },
+    });
+  }
+
+  protected formatAmount(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) {
+      return '-';
+    }
+
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  protected formatKey(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) {
+      return '-';
+    }
+
+    return `${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value * 100)}%`;
+  }
+
+  protected formatPercent(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) {
+      return '-';
+    }
+
+    return `${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value * 100)}%`;
+  }
+
+  private mergeRows(
+    currentRows: CostKeyOverviewRow[],
+    historicalByHorizon: Map<string, CostKeyOverviewRow[]>,
+  ): OverviewRow[] {
+    const rowsByKey = new Map<string, OverviewRow>();
+
+    for (const row of currentRows) {
+      rowsByKey.set(this.rowKey(row), {
+        ...row,
+        historicalCosts: {},
+      });
+    }
+
+    for (const [horizon, historicalRows] of historicalByHorizon.entries()) {
+      for (const row of historicalRows) {
+        const target = rowsByKey.get(this.rowKey(row));
+        if (!target) {
+          continue;
+        }
+
+        target.historicalCosts[horizon] = row.costKeur;
+      }
+    }
+
+    return [...rowsByKey.values()];
+  }
+
+  private rowKey(row: CostKeyOverviewRow): string {
+    return [row.fy, row.loc, row.serviceBundle, row.clientCorridor, row.wbsElement].join('|');
+  }
+}

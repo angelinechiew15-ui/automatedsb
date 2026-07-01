@@ -28,6 +28,7 @@ export class App {
     { path: '/lab-summary', label: 'Lab Summary' },
     { path: '/workshop-summary', label: 'Workshop Summary' },
     { path: '/cost-key', label: 'Cost Key' },
+    { path: '/cost-key-overview', label: 'Cost Key Overview' },
   ];
 
   protected go(path: string): void {
