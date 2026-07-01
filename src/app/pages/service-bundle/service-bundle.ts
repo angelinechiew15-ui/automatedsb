@@ -165,7 +165,12 @@ export class ServiceBundle implements OnInit {
 
   private buildTabs(d: ServiceBundleDashboard): void {
     this.sbName.set(d.sbName ?? '');
-    const tabs: ChartTab[] = [{ id: 'All', label: 'All', loc: '' }];
+    const tabs: ChartTab[] = [
+      { id: 'All', label: 'All', loc: '' },
+      { id: 'RPTCentralAll', label: 'RPT Central', loc: '' },
+      { id: 'RPTMUCESDAll', label: 'RPT MUC ESD', loc: '' },
+    ];
+    const excludedLocs = new Set(['RPT CENTRAL', 'RPT MUC ESD']);
 
     // The backend returns the ordered, data-driven list of location tabs
     // (RPT CENTRAL + mapped labs + any RPT location with actuals). Fall back to
@@ -176,6 +181,9 @@ export class ServiceBundle implements OnInit {
         : (d.labs ?? []).map((l) => l.text).filter((t): t is string => !!t);
 
     for (const loc of locs) {
+      if (excludedLocs.has(loc.toUpperCase())) {
+        continue;
+      }
       const label = loc === 'RPT CENTRAL' ? 'RPT Central' : loc;
       tabs.push({ id: loc.replace(/\s+/g, ''), label, loc });
     }
