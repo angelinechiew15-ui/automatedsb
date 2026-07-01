@@ -13,6 +13,7 @@ export interface CostKeyOverviewRow {
   costKeur: number;
   key: number | null;
   totalCostDemand: number;
+  historicalCosts: Record<string, number | null>;
 }
 
 @Injectable({ providedIn: 'root' })

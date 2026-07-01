@@ -1,17 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
 import { CostKeyOverviewRow, CostKeyService } from '../../services/cost-key.service';
 
 interface SummaryCard {
   label: string;
   value: string;
-}
-
-interface OverviewRow extends CostKeyOverviewRow {
-  historicalCosts: Record<string, number | null>;
 }
 
 @Component({
@@ -272,7 +267,7 @@ export class CostKeyOverview implements OnInit {
   private readonly bundleApi = inject(ServiceBundleService);
 
   protected readonly horizons = signal<LookupItem[]>([]);
-  protected readonly rows = signal<OverviewRow[]>([]);
+  protected readonly rows = signal<CostKeyOverviewRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -369,25 +364,12 @@ export class CostKeyOverview implements OnInit {
       return;
     }
 
-    const historyHorizons = this.pastHorizons().map((item) => item.text);
     this.loading.set(true);
     this.error.set(null);
 
-    const requests = [
-      this.costKeyApi.getOverview(horizon, this.selectedFy(), this.selectedLoc(), this.selectedSb()),
-      ...historyHorizons.map((pastHorizon) =>
-        this.costKeyApi.getOverview(pastHorizon, this.selectedFy(), this.selectedLoc(), this.selectedSb()),
-      ),
-    ];
-
-    forkJoin(requests).subscribe({
-      next: ([currentRows, ...pastRows]) => {
-        const historicalByHorizon = new Map<string, CostKeyOverviewRow[]>();
-        historyHorizons.forEach((pastHorizon, index) => {
-          historicalByHorizon.set(pastHorizon, pastRows[index] ?? []);
-        });
-
-        this.rows.set(this.mergeRows(currentRows ?? [], historicalByHorizon));
+    this.costKeyApi.getOverview(horizon, this.selectedFy(), this.selectedLoc(), this.selectedSb()).subscribe({
+      next: (data) => {
+        this.rows.set(data ?? []);
         this.loading.set(false);
       },
       error: () => {
@@ -430,34 +412,4 @@ export class CostKeyOverview implements OnInit {
     }).format(value * 100)}%`;
   }
 
-  private mergeRows(
-    currentRows: CostKeyOverviewRow[],
-    historicalByHorizon: Map<string, CostKeyOverviewRow[]>,
-  ): OverviewRow[] {
-    const rowsByKey = new Map<string, OverviewRow>();
-
-    for (const row of currentRows) {
-      rowsByKey.set(this.rowKey(row), {
-        ...row,
-        historicalCosts: {},
-      });
-    }
-
-    for (const [horizon, historicalRows] of historicalByHorizon.entries()) {
-      for (const row of historicalRows) {
-        const target = rowsByKey.get(this.rowKey(row));
-        if (!target) {
-          continue;
-        }
-
-        target.historicalCosts[horizon] = row.costKeur;
-      }
-    }
-
-    return [...rowsByKey.values()];
-  }
-
-  private rowKey(row: CostKeyOverviewRow): string {
-    return [row.fy, row.loc, row.serviceBundle, row.clientCorridor, row.wbsElement].join('|');
-  }
 }
