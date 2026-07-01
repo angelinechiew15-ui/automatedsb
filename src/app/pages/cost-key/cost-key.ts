@@ -18,14 +18,8 @@ interface SummaryCard {
       <div class="hero">
         <div>
           <p class="eyebrow">Cost Key</p>
-          <h1>Cost Key Overview</h1>
-          <p class="lede">
-            View the backend cost-key rollup by fiscal year, location, and service bundle.
-          </p>
         </div>
-        <button class="btn-refresh" type="button" (click)="loadData()" [disabled]="loading()">
-          {{ loading() ? 'Refreshing...' : 'Refresh overview' }}
-        </button>
+        
       </div>
 
       <div class="toolbar">
@@ -58,6 +52,9 @@ interface SummaryCard {
             }
           </select>
         </div>
+        <button class="btn-refresh" type="button" (click)="loadData()" [disabled]="loading()">
+          {{ loading() ? 'Refreshing...' : 'Refresh overview' }}
+        </button>
       </div>
 
       <div class="summary-grid">
@@ -86,7 +83,7 @@ interface SummaryCard {
                 <th scope="col">Service Bundle</th>
                 <th scope="col">Client Corridor</th>
                 <th scope="col">WBS Element</th>
-                <th scope="col" class="num-h">CC %</th>
+                <th scope="col" class="num-h">PL key</th>
                 <th scope="col" class="num-h">Cost (k EUR)</th>
                 <th scope="col" class="num-h">Key</th>
               </tr>
@@ -332,9 +329,10 @@ export class CostKey implements OnInit {
     const avgKey = rows.length
       ? rows.reduce((sum, row) => sum + (row.key ?? 0), 0) / rows.length
       : 0;
+    const selectedLocation = this.selectedLoc() || 'All';
 
     return [
-      { label: 'Rows', value: this.formatCount(rows.length) },
+      { label: 'Selected Location', value: selectedLocation },
       { label: 'Total Cost (k EUR)', value: this.formatAmount(totalCost) },
       { label: 'Average Key', value: this.formatKey(avgKey) },
     ];
