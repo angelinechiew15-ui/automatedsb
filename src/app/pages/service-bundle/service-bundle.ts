@@ -167,8 +167,8 @@ export class ServiceBundle implements OnInit {
     this.sbName.set(d.sbName ?? '');
     const tabs: ChartTab[] = [
       { id: 'All', label: 'All', loc: '' },
-      { id: 'RPTCentralAll', label: 'RPT Central', loc: '' },
-      { id: 'RPTMUCESDAll', label: 'RPT MUC ESD', loc: '' },
+      { id: 'RPTCentral', label: 'RPT Central', loc: 'RPT CENTRAL' },
+      { id: 'RPTMUCESD', label: 'RPT MUC ESD', loc: 'RPT MUC ESD' },
     ];
     const excludedLocs = new Set(['RPT CENTRAL', 'RPT MUC ESD']);
 
