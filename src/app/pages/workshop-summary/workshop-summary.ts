@@ -583,6 +583,9 @@ export class WorkshopSummary implements OnInit {
     this.selectedHorizon.set(value);
     this.selectedDiv.set(''); this.selectedSbFilter.set('');
     this.rows.set([]);
+    if (value) {
+      this.loadData();
+    }
   }
 
   protected onDivFilterChange(value: string): void {
