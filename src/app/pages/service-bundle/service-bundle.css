@@ -209,6 +209,13 @@
   word-break: break-word;
 }
 
+.sb-detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
 .sb-add-row,
 .sb-save-row {
   border: none;

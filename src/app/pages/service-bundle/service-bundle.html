@@ -231,92 +231,95 @@
             @if (loadingDetails()) {
               <p class="sb-hint">Loading detailed service bundle information…</p>
             } @else if (detailInfo(); as info) {
-              <div class="sb-scroll">
-                <table class="sb-table sb-table-wide sb-detail-table">
-                  <thead>
-                    <tr class="sb-title-row">
-                      <th colspan="4">Detailed Service Bundle Information @if (sbName()) {<span>- {{ sbName() }}</span>}</th>
-                      <th class="sb-title-action-cell">
-                        <button type="button" class="sb-add-row" (click)="addDetailRow()">Add Row</button>
-                      </th>
-                    </tr>
-                    <tr>
-                      <th>RFC</th>
-                      <th>Test Start per Month @if (sbName()) {<span>{{ sbName() }}</span>}</th>
-                      <th>RTU @if (sbName()) {<span>{{ sbName() }}</span>}</th>
-                      <th>Cost @if (sbName()) {<span>{{ sbName() }}</span>}</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of detailRows(); track row.rowKey) {
-                      <tr>
-                        <td>
-                          <input [(ngModel)]="row.horizon" type="text" maxlength="20" />
-                        </td>
-                        <td><textarea [(ngModel)]="row.tsDetails" rows="5"></textarea></td>
-                        <td><textarea [(ngModel)]="row.rtuDetails" rows="5"></textarea></td>
-                        <td><textarea [(ngModel)]="row.costDetails" rows="5"></textarea></td>
-                        <td class="sb-detail-action-cell">
-                          <button
-                            type="button"
-                            class="sb-save-row"
-                            (click)="saveDetailRow(row)"
-                            [disabled]="!canSaveDetailRow(row) || savingDetailRowKey() === row.rowKey">
-                            {{ savingDetailRowKey() === row.rowKey ? 'Saving…' : 'Save' }}
-                          </button>
-                        </td>
+              <div class="sb-detail-stack">
+                <div class="sb-scroll">
+                  <table class="sb-table sb-table-wide sb-detail-table">
+                    <thead>
+                      <tr class="sb-title-row">
+                        <th colspan="4">Detailed Service Bundle Information @if (sbName()) {<span>- {{ sbName() }}</span>}</th>
+                        <th class="sb-title-action-cell">
+                          <button type="button" class="sb-add-row" (click)="addDetailRow()">Add Row</button>
+                        </th>
                       </tr>
-                    } @empty {
-                      <tr><td colspan="5" class="empty">No detailed service bundle information found.</td></tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+                      <tr>
+                        <th>RFC</th>
+                        <th>Test Start per Month @if (sbName()) {<span>{{ sbName() }}</span>}</th>
+                        <th>RTU @if (sbName()) {<span>{{ sbName() }}</span>}</th>
+                        <th>Cost @if (sbName()) {<span>{{ sbName() }}</span>}</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of detailRows(); track row.rowKey) {
+                        <tr>
+                          <td>
+                            <input [(ngModel)]="row.horizon" type="text" maxlength="20" />
+                          </td>
+                          <td><textarea [(ngModel)]="row.tsDetails" rows="5"></textarea></td>
+                          <td><textarea [(ngModel)]="row.rtuDetails" rows="5"></textarea></td>
+                          <td><textarea [(ngModel)]="row.costDetails" rows="5"></textarea></td>
+                          <td class="sb-detail-action-cell">
+                            <button
+                              type="button"
+                              class="sb-save-row"
+                              (click)="saveDetailRow(row)"
+                              [disabled]="!canSaveDetailRow(row) || savingDetailRowKey() === row.rowKey">
+                              {{ savingDetailRowKey() === row.rowKey ? 'Saving…' : 'Save' }}
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="5" class="empty">No detailed service bundle information found.</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
 
-              <div class="sb-scope-grid">
-                <table id="res" class="sb-table sb-table-wide sb-scope-table">
-                  <thead>
-                    <tr class="sb-title-row">
-                      <th colspan="4">Scope and Responsibilities of this Service Bundle</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td class="tablegreen">Valid for Client Corridor(s)</td>
-                      <td>{{ dashboard()?.clientCorridors?.join(', ') }}</td>
-                      <td class="tablegreen">Client Corridor Owner</td>
-                      <td>{{ info.responsibility.resCCO }}</td>
-                    </tr>
-                    <tr>
-                      <td class="tablegreen">Valid for RPT Lab(s):</td>
-                      <td>
-                        {{ uniqueLabNames().join(', ') }}
-                      </td>
-                      <td class="tablegreen">Client RFC Manager:</td>
-                      <td>{{ info.responsibility.resRFC }}</td>
-                    </tr>
-                    <tr>
-                      <td class="tablegreen">RPT Service Bundle Owner:</td>
-                      <td>{{ info.responsibility.resSBown }}</td>
-                      <td class="tablegreen">Client Budget Owner:</td>
-                      <td>{{ info.responsibility.resCBO }}</td>
-                    </tr>
-                    <tr>
-                      <td class="tablegreen">Planning Responsible:</td>
-                      <td>{{ info.responsibility.resPR }}</td>
-                      <td class="tablegreen">Client Finance Responsible:</td>
-                      <td>{{ info.responsibility.resCFR }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="sb-scope-status">Status: <span>{{ info.responsibility.resSBstatus || 'NA' }}</span></div>
+                <div class="sb-scope-grid">
+                  <table id="res" class="sb-table sb-table-wide sb-scope-table">
+                    <thead>
+                      <tr class="sb-title-row">
+                        <th colspan="4">Scope and Responsibilities of this Service Bundle</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="tablegreen">Valid for Client Corridor(s)</td>
+                        <td>{{ dashboard()?.clientCorridors?.join(', ') }}</td>
+                        <td class="tablegreen">Client Corridor Owner</td>
+                        <td>{{ info.responsibility.resCCO }}</td>
+                      </tr>
+                      <tr>
+                        <td class="tablegreen">Valid for RPT Lab(s):</td>
+                        <td>
+                          {{ uniqueLabNames().join(', ') }}
+                        </td>
+                        <td class="tablegreen">Client RFC Manager:</td>
+                        <td>{{ info.responsibility.resRFC }}</td>
+                      </tr>
+                      <tr>
+                        <td class="tablegreen">RPT Service Bundle Owner:</td>
+                        <td>{{ info.responsibility.resSBown }}</td>
+                        <td class="tablegreen">Client Budget Owner:</td>
+                        <td>{{ info.responsibility.resCBO }}</td>
+                      </tr>
+                      <tr>
+                        <td class="tablegreen">Planning Responsible:</td>
+                        <td>{{ info.responsibility.resPR }}</td>
+                        <td class="tablegreen">Client Finance Responsible:</td>
+                        <td>{{ info.responsibility.resCFR }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="sb-scope-status">Status: <span>{{ info.responsibility.resSBstatus || 'NA' }}</span></div>
+                </div>
               </div>
             } @else {
               <p class="sb-hint">No detailed service bundle information available for this selection.</p>
             }
           </div>
         </section>
+        
       </div>
     } @else {
       <p class="sb-hint">No chart data available for this selection.</p>
