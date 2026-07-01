@@ -68,6 +68,29 @@ export interface ServiceBundleCharts {
   costRows: CostBreakdownRow[];
 }
 
+export interface ServiceBundleDetailRow {
+  horizon: string;
+  tsDetails: string;
+  rtuDetails: string;
+  costDetails: string;
+}
+
+export interface ServiceBundleResponsibility {
+  resCCO: string;
+  resSBown: string;
+  resRFC: string;
+  resCBO: string;
+  resPR: string;
+  resCFR: string;
+  resSBstatus: string;
+}
+
+export interface ServiceBundleDetails {
+  success: boolean;
+  detailRows: ServiceBundleDetailRow[];
+  responsibility: ServiceBundleResponsibility;
+}
+
 /** A row of quarterly-average lab cost data from v_sb_asb_data.
  *
  *  cost value = COALESCE(rfcwodemand,0) + COALESCE(depreciation,0) + COALESCE(adderdemand,0)
@@ -197,6 +220,12 @@ export class ServiceBundleService {
       params = params.set('loc', loc);
     }
     return this.http.get<ServiceBundleCharts>(`${this.base}/service-bundle/charts`, { params });
+  }
+
+  /** Detailed service-bundle information, scope/responsibility and approval status. */
+  getServiceBundleDetails(sbId: string, horizon: string): Observable<ServiceBundleDetails> {
+    const params = new HttpParams().set('sbId', sbId).set('horizon', horizon);
+    return this.http.get<ServiceBundleDetails>(`${this.base}/service-bundle/details`, { params });
   }
 
   /**

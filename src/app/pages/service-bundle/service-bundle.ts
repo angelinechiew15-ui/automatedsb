@@ -6,7 +6,9 @@ import {
   CostBreakdownRow,
   LookupItem,
   MeasureBreakdownRow,
+  ServiceBundleDetailRow,
   ServiceBundleCharts,
+  ServiceBundleDetails,
   ServiceBundleDashboard,
   ServiceBundleService,
 } from '../../services/service-bundle.service';
@@ -45,6 +47,11 @@ export interface CostDetailRow {
   costRtu: number;
 }
 
+export interface ServiceBundleInfoState {
+  detailRows: ServiceBundleDetailRow[];
+  responsibility: ServiceBundleDetails['responsibility'] | null;
+}
+
 @Component({
   selector: 'app-service-bundle',
   standalone: true,
@@ -66,12 +73,16 @@ export class ServiceBundle implements OnInit {
   protected readonly loadingSbNames = signal(false);
   protected readonly searching = signal(false);
   protected readonly loadingCharts = signal(false);
+  protected readonly loadingDetails = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly dashboard = signal<ServiceBundleDashboard | null>(null);
   protected readonly tabs = signal<ChartTab[]>([]);
   protected readonly activeTab = signal<string>('');
   /** Name of the searched service bundle, shown in the category titles. */
   protected readonly sbName = signal<string>('');
+
+  protected readonly detailInfo = signal<ServiceBundleDetails | null>(null);
 
   // Chart data cached per tab id so switching tabs doesn't refetch.
   private readonly chartCache = signal<Record<string, ServiceBundleCharts>>({});
@@ -157,10 +168,14 @@ export class ServiceBundle implements OnInit {
     this.searching.set(true);
     this.tabs.set([]);
     this.chartCache.set({});
+    this.dashboard.set(null);
+    this.detailInfo.set(null);
 
     this.api.getDashboard(this.selectedSb, this.horizonName()).subscribe({
       next: (data) => {
+        this.dashboard.set(data);
         this.buildTabs(data);
+        this.loadDetails();
         this.searching.set(false);
         const first = this.tabs()[0];
         if (first) {
@@ -170,6 +185,20 @@ export class ServiceBundle implements OnInit {
       error: () => {
         this.searching.set(false);
         this.error.set('Failed to load the Service Bundle dashboard.');
+      },
+    });
+  }
+
+  private loadDetails(): void {
+    this.loadingDetails.set(true);
+    this.api.getServiceBundleDetails(this.selectedSb, this.horizonName()).subscribe({
+      next: (data) => {
+        this.detailInfo.set(data);
+        this.loadingDetails.set(false);
+      },
+      error: () => {
+        this.loadingDetails.set(false);
+        this.error.set('Failed to load detailed service bundle information.');
       },
     });
   }
@@ -407,5 +436,15 @@ export class ServiceBundle implements OnInit {
         costRtu: this.round2(r.costRtu),
       };
     });
+  }
+
+  protected uniqueLabNames(): string[] {
+    const seen = new Map<string, string>();
+    for (const lab of this.dashboard()?.labs ?? []) {
+      if (lab.value && !seen.has(lab.value)) {
+        seen.set(lab.value, lab.text);
+      }
+    }
+    return Array.from(seen.values());
   }
 }
