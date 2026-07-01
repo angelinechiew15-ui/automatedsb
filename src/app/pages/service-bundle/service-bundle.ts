@@ -91,6 +91,17 @@ export class ServiceBundle implements OnInit {
     return this.horizons().find((h) => h.value === this.selectedHorizon)?.text ?? this.selectedHorizon;
   }
 
+  private resolvedMucLocation(): string {
+    return this.sbName().toLowerCase().includes('testfloor') ? 'RPT MUC ETC' : 'RPT MUC ESD';
+  }
+
+  private resolveLocationForTab(loc: string): string {
+    if (loc.toUpperCase() === 'RPT MUC') {
+      return this.resolvedMucLocation();
+    }
+    return loc;
+  }
+
   ngOnInit(): void {
     this.api.listOwners().subscribe({
       next: (data) => this.owners.set(data),
@@ -165,12 +176,13 @@ export class ServiceBundle implements OnInit {
 
   private buildTabs(d: ServiceBundleDashboard): void {
     this.sbName.set(d.sbName ?? '');
+    const mucLocation = this.resolvedMucLocation();
     const tabs: ChartTab[] = [
       { id: 'All', label: 'All', loc: '' },
       { id: 'RPTCentral', label: 'RPT Central', loc: 'RPT CENTRAL' },
-      { id: 'RPTMUCESD', label: 'RPT MUC ESD', loc: 'RPT MUC ESD' },
+      { id: mucLocation.replace(/\s+/g, ''), label: mucLocation, loc: mucLocation },
     ];
-    const excludedLocs = new Set(['RPT CENTRAL', 'RPT MUC ESD']);
+    const excludedLocs = new Set(['RPT CENTRAL', mucLocation.toUpperCase()]);
 
     // The backend returns the ordered, data-driven list of location tabs
     // (RPT CENTRAL + mapped labs + any RPT location with actuals). Fall back to
@@ -181,11 +193,12 @@ export class ServiceBundle implements OnInit {
         : (d.labs ?? []).map((l) => l.text).filter((t): t is string => !!t);
 
     for (const loc of locs) {
-      if (excludedLocs.has(loc.toUpperCase())) {
+      const resolvedLoc = this.resolveLocationForTab(loc);
+      if (excludedLocs.has(resolvedLoc.toUpperCase())) {
         continue;
       }
-      const label = loc === 'RPT CENTRAL' ? 'RPT Central' : loc;
-      tabs.push({ id: loc.replace(/\s+/g, ''), label, loc });
+      const label = resolvedLoc === 'RPT CENTRAL' ? 'RPT Central' : resolvedLoc;
+      tabs.push({ id: resolvedLoc.replace(/\s+/g, ''), label, loc: resolvedLoc });
     }
 
     this.tabs.set(tabs);
