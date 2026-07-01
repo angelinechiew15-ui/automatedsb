@@ -232,6 +232,10 @@
             @if (loadingDetails()) {
               <p class="sb-hint">Loading detailed service bundle information…</p>
             } @else if (detailInfo(); as info) {
+              <div class="sb-detail-toolbar">
+                <button type="button" class="sb-add-row" (click)="addDetailRow()">Add Row</button>
+              </div>
+
               <div class="sb-scroll">
                 <table class="sb-table sb-table-wide sb-detail-table">
                   <thead>
@@ -240,18 +244,30 @@
                       <th>Test Start per Month</th>
                       <th>RTU</th>
                       <th>Cost</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of info.detailRows; track row.horizon) {
+                    @for (row of detailRows(); track row.rowKey) {
                       <tr>
-                        <td>{{ row.horizon }}</td>
-                        <td><textarea readonly rows="5" [value]="row.tsDetails"></textarea></td>
-                        <td><textarea readonly rows="5" [value]="row.rtuDetails"></textarea></td>
-                        <td><textarea readonly rows="5" [value]="row.costDetails"></textarea></td>
+                        <td>
+                          <input [(ngModel)]="row.horizon" type="text" maxlength="20" />
+                        </td>
+                        <td><textarea [(ngModel)]="row.tsDetails" rows="5"></textarea></td>
+                        <td><textarea [(ngModel)]="row.rtuDetails" rows="5"></textarea></td>
+                        <td><textarea [(ngModel)]="row.costDetails" rows="5"></textarea></td>
+                        <td class="sb-detail-action-cell">
+                          <button
+                            type="button"
+                            class="sb-save-row"
+                            (click)="saveDetailRow(row)"
+                            [disabled]="!canSaveDetailRow(row) || savingDetailRowKey() === row.rowKey">
+                            {{ savingDetailRowKey() === row.rowKey ? 'Saving…' : 'Save' }}
+                          </button>
+                        </td>
                       </tr>
                     } @empty {
-                      <tr><td colspan="4" class="empty">No detailed service bundle information found.</td></tr>
+                      <tr><td colspan="5" class="empty">No detailed service bundle information found.</td></tr>
                     }
                   </tbody>
                 </table>

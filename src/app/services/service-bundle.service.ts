@@ -75,6 +75,14 @@ export interface ServiceBundleDetailRow {
   costDetails: string;
 }
 
+export interface ServiceBundleDetailUpsertRequest {
+  sbId: string;
+  horizon: string;
+  tsDetails: string;
+  rtuDetails: string;
+  costDetails: string;
+}
+
 export interface ServiceBundleResponsibility {
   resCCO: string;
   resSBown: string;
@@ -226,6 +234,11 @@ export class ServiceBundleService {
   getServiceBundleDetails(sbId: string, horizon: string): Observable<ServiceBundleDetails> {
     const params = new HttpParams().set('sbId', sbId).set('horizon', horizon);
     return this.http.get<ServiceBundleDetails>(`${this.base}/service-bundle/details`, { params });
+  }
+
+  /** Save or update a single detailed service-bundle row. */
+  saveServiceBundleDetail(payload: ServiceBundleDetailUpsertRequest): Observable<{ success: boolean; horizon: string }> {
+    return this.http.post<{ success: boolean; horizon: string }>(`${this.base}/service-bundle/details`, payload);
   }
 
   /**

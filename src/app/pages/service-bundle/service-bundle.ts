@@ -7,6 +7,7 @@ import {
   LookupItem,
   MeasureBreakdownRow,
   ServiceBundleDetailRow,
+  ServiceBundleDetailUpsertRequest,
   ServiceBundleCharts,
   ServiceBundleDetails,
   ServiceBundleDashboard,
@@ -52,6 +53,15 @@ export interface ServiceBundleInfoState {
   responsibility: ServiceBundleDetails['responsibility'] | null;
 }
 
+interface EditableDetailRow {
+  rowKey: string;
+  horizon: string;
+  tsDetails: string;
+  rtuDetails: string;
+  costDetails: string;
+  persisted: boolean;
+}
+
 @Component({
   selector: 'app-service-bundle',
   standalone: true,
@@ -74,6 +84,7 @@ export class ServiceBundle implements OnInit {
   protected readonly searching = signal(false);
   protected readonly loadingCharts = signal(false);
   protected readonly loadingDetails = signal(false);
+  protected readonly savingDetailRowKey = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
 
   protected readonly dashboard = signal<ServiceBundleDashboard | null>(null);
@@ -83,6 +94,8 @@ export class ServiceBundle implements OnInit {
   protected readonly sbName = signal<string>('');
 
   protected readonly detailInfo = signal<ServiceBundleDetails | null>(null);
+  protected readonly detailRows = signal<EditableDetailRow[]>([]);
+  private detailRowSeq = 0;
 
   // Chart data cached per tab id so switching tabs doesn't refetch.
   private readonly chartCache = signal<Record<string, ServiceBundleCharts>>({});
@@ -170,6 +183,7 @@ export class ServiceBundle implements OnInit {
     this.chartCache.set({});
     this.dashboard.set(null);
     this.detailInfo.set(null);
+    this.detailRows.set([]);
 
     this.api.getDashboard(this.selectedSb, this.horizonName()).subscribe({
       next: (data) => {
@@ -189,11 +203,28 @@ export class ServiceBundle implements OnInit {
     });
   }
 
+  private createDetailRow(row: Partial<ServiceBundleDetailRow> = {}, persisted = true): EditableDetailRow {
+    this.detailRowSeq += 1;
+    return {
+      rowKey: `detail-row-${this.detailRowSeq}`,
+      horizon: row.horizon ?? '',
+      tsDetails: row.tsDetails ?? '',
+      rtuDetails: row.rtuDetails ?? '',
+      costDetails: row.costDetails ?? '',
+      persisted,
+    };
+  }
+
   private loadDetails(): void {
+    const drafts = this.detailRows().filter((row) => !row.persisted);
     this.loadingDetails.set(true);
     this.api.getServiceBundleDetails(this.selectedSb, this.horizonName()).subscribe({
       next: (data) => {
         this.detailInfo.set(data);
+        this.detailRows.set([
+          ...data.detailRows.map((row) => this.createDetailRow(row, true)),
+          ...drafts,
+        ]);
         this.loadingDetails.set(false);
       },
       error: () => {
@@ -446,5 +477,44 @@ export class ServiceBundle implements OnInit {
       }
     }
     return Array.from(seen.values());
+  }
+
+  protected addDetailRow(): void {
+    this.detailRows.update((rows) => [...rows, this.createDetailRow({}, false)]);
+  }
+
+  protected canSaveDetailRow(row: EditableDetailRow): boolean {
+    return !!row.horizon.trim() && !!(row.tsDetails.trim() || row.rtuDetails.trim() || row.costDetails.trim());
+  }
+
+  protected saveDetailRow(row: EditableDetailRow): void {
+    if (!this.canSaveDetailRow(row) || !this.selectedSb) {
+      return;
+    }
+
+    this.error.set(null);
+    this.savingDetailRowKey.set(row.rowKey);
+
+    const payload: ServiceBundleDetailUpsertRequest = {
+      sbId: this.selectedSb,
+      horizon: row.horizon,
+      tsDetails: row.tsDetails,
+      rtuDetails: row.rtuDetails,
+      costDetails: row.costDetails,
+    };
+
+    this.api.saveServiceBundleDetail(payload).subscribe({
+      next: () => {
+        this.detailRows.update((rows) => rows.map((current) =>
+          current.rowKey === row.rowKey ? { ...current, persisted: true } : current,
+        ));
+        this.loadDetails();
+        this.savingDetailRowKey.set(null);
+      },
+      error: () => {
+        this.savingDetailRowKey.set(null);
+        this.error.set('Failed to save the detailed service bundle row.');
+      },
+    });
   }
 }
