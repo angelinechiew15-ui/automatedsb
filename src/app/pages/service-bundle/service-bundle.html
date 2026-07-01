@@ -242,9 +242,9 @@
                     </tr>
                     <tr>
                       <th>RFC</th>
-                      <th>Test Start per Month</th>
-                      <th>RTU</th>
-                      <th>Cost</th>
+                      <th>Test Start per Month @if (sbName()) {<span>{{ sbName() }}</span>}</th>
+                      <th>RTU @if (sbName()) {<span>{{ sbName() }}</span>}</th>
+                      <th>Cost @if (sbName()) {<span>{{ sbName() }}</span>}</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -308,12 +308,9 @@
                       <td class="tablegreen">Client Finance Responsible:</td>
                       <td>{{ info.responsibility.resCFR }}</td>
                     </tr>
-                    <tr>
-                      <td class="tablegreen">Status:</td>
-                      <td colspan="3">{{ info.responsibility.resSBstatus || 'NA' }}</td>
-                    </tr>
                   </tbody>
                 </table>
+                <div class="sb-scope-status">Status: <span>{{ info.responsibility.resSBstatus || 'NA' }}</span></div>
               </div>
             } @else {
               <p class="sb-hint">No detailed service bundle information available for this selection.</p>

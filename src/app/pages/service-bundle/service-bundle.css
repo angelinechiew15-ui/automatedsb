@@ -162,7 +162,7 @@
 
 .sb-title-row th,
 .sb-title-row td {
-  background: #556b2f;
+  background: #006400;
   color: #fff;
   font-weight: 700;
 }
@@ -261,7 +261,17 @@
 }
 
 .sb-scope-table thead th {
-  background: #556b2f;
+  background: #006400;
   color: #fff;
   text-align: left;
+}
+
+.sb-scope-status {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.sb-scope-status span {
+  color: #006400;
 }
