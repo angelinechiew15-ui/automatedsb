@@ -40,22 +40,22 @@ interface HorizonOption {
           <div class="chart-section">
             <h2>Deliverance Status Summary</h2>
             <app-pie-chart
-              [labels]="['On Time (≤ Due Date)', 'At Risk (Due Date + 7d)', 'Late (> Due Date + 7d)']"
+              [labels]="['Complete <= due date', 'Published within 7 days after overdue', 'Published after 7 days from due date']"
               [data]="[data()!.summary.green, data()!.summary.lightGreen, data()!.summary.red]"
               [colors]="['#16a34a', '#84cc16', '#dc2626']"
             ></app-pie-chart>
             <div class="legend">
               <div class="legend-item">
                 <span class="legend-color green"></span>
-                <span>On Time: {{ data()!.summary.green }}</span>
+                <span>Complete &lt;= due date: {{ data()!.summary.green }}</span>
               </div>
               <div class="legend-item">
                 <span class="legend-color light-green"></span>
-                <span>At Risk: {{ data()!.summary.lightGreen }}</span>
+                <span>Published within 7 days after overdue: {{ data()!.summary.lightGreen }}</span>
               </div>
               <div class="legend-item">
                 <span class="legend-color red"></span>
-                <span>Late: {{ data()!.summary.red }}</span>
+                <span>Published after 7 days from due date: {{ data()!.summary.red }}</span>
               </div>
             </div>
           </div>
@@ -68,9 +68,9 @@ interface HorizonOption {
               <thead>
                 <tr>
                   <th scope="col">Service Bundle Owner</th>
-                  <th scope="col" class="num-h">On Time</th>
-                  <th scope="col" class="num-h">At Risk</th>
-                  <th scope="col" class="num-h">Late</th>
+                  <th scope="col" class="num-h">Complete <= due date</th>
+                  <th scope="col" class="num-h">Published within 7 days after overdue</th>
+                  <th scope="col" class="num-h">Published after 7 days from due date</th>
                   <th scope="col" class="num-h">Total</th>
                 </tr>
               </thead>
