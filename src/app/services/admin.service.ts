@@ -284,6 +284,9 @@ export class AdminService {
       { horizon, dueDate },
     );
   }
+  deleteDueDate(horizon: string) {
+    return this.http.delete<{ success: boolean }>(`${this.base}/due-dates/${encodeURIComponent(horizon)}`);
+  }
 
   // Location lookups (dedicated endpoints)
   listExtLocation(): Observable<LookupItem[]> {

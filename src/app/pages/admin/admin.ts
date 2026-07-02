@@ -1129,8 +1129,22 @@ export class Admin implements OnInit {
     });
   }
   clearDueDate() {
-    if (confirm('Are you sure you want to clear the due date?'))
-      this.dueDateValue = '';
+    if (!this.dueDateHorizon) {
+      this.flashDueDate('Horizon is not set', 'danger');
+      return;
+    }
+    if (!confirm('Are you sure you want to clear the due date?')) return;
+    this.api.deleteDueDate(this.dueDateHorizon).subscribe({
+      next: (r) => {
+        if (r.success) {
+          this.dueDateValue = '';
+          this.flashDueDate('Due date cleared', 'success');
+        } else {
+          this.flashDueDate('Error clearing due date', 'danger');
+        }
+      },
+      error: (e) => this.flashDueDate('An error occurred: ' + e.message, 'danger'),
+    });
   }
   private flashDueDate(message: string, type: 'success' | 'danger') {
     this.dueDateStatus.set({ type, message });
