@@ -29,6 +29,7 @@ export class App {
     { path: '/workshop-summary', label: 'Workshop Summary' },
     { path: '/cost-key', label: 'Cost Key' },
     { path: '/cost-key-overview', label: 'Cost Key Overview' },
+    { path: '/sb-deliverance', label: 'SB Deliverance' },
   ];
 
   protected go(path: string): void {
