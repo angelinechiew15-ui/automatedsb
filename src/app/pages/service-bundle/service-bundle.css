@@ -267,18 +267,46 @@
   width: 100%;
 }
 
-.sb-scope-table thead th {
-  background: #006400;
+.sb-detail-table .sb-scope-table thead th {
+  background: darkolivegreen;
   color: #fff;
   text-align: left;
+}
+
+/* Detailed Service Bundle Information - specific header colours and alignment
+   Apply only to the detailed table's header row (not the merged title row). */
+.sb-detail-table thead tr:not(.sb-title-row) th {
+  font-weight: 700;
+  text-align: center;
+}
+
+.sb-detail-table thead tr:not(.sb-title-row) th:nth-child(1) {
+  background-color: #769f3b;
+  color: #fff;
+}
+
+.sb-detail-table thead tr:not(.sb-title-row) th:nth-child(2) {
+  background-color: #ab377a;
+}
+
+.sb-detail-table thead tr:not(.sb-title-row) th:nth-child(3) {
+  background-color: #9bc3b7;
+}
+
+.sb-detail-table thead tr:not(.sb-title-row) th:nth-child(4) {
+  background-color: darkgrey;
+}
+
+.sb-detail-table thead tr:not(.sb-title-row) th:nth-child(5) {
+  background-color: lightgrey;
 }
 
 .sb-scope-table {
   font-size: 0.85rem;
 }
 
-.sb-scope-table .tablegreen {
-  background: #006400;
+ .sb-scope-table .tablegreen {
+  background: #769f3b;
   color: #fff;
   font-weight: 600;
 }
@@ -290,5 +318,5 @@
 }
 
 .sb-scope-status span {
-  color: #006400;
+   font-weight: 600;
 }
