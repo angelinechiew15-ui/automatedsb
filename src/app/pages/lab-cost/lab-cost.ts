@@ -260,9 +260,15 @@ export class LabCost implements OnInit {
   protected readonly pivotRows = computed((): PivotRow[] => {
     const sb = this.appliedSb();
     const loc = this.appliedLoc();
-    const filtered = this.allRows().filter(
-      (r) => (!sb || r.sb === sb) && (!loc || r.location === loc)
-    );
+    // Try to be tolerant: the selected SB may be an id or a display text,
+    // while the rows may contain either `sb` (id) or `sbname` (text).
+    const sbOpt = sb ? this.sbOptions().find((o) => o.value === sb) : undefined;
+    const sbText = sbOpt?.text;
+    const filtered = this.allRows().filter((r) => {
+      const sbMatch = !sb || r.sb === sb || r.sbname === sb || (sbText && (r.sb === sbText || r.sbname === sbText));
+      const locMatch = !loc || r.location === loc;
+      return sbMatch && locMatch;
+    });
 
     const map = new Map<string, PivotRow>();
     for (const r of filtered) {
