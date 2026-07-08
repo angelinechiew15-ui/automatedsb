@@ -283,9 +283,14 @@ export class LabCost implements OnInit {
       }
       map.get(key)!.values[r.fy] = r.value;
     }
-    // Exclude rows where every FY value is null (no cost data at all)
+    // Exclude rows where every FY value is null, unless the user has explicitly
+    // selected a Service Bundle — in that case show the SB rows (with dashes)
+    // so users can see the selection even when no cost data exists.
     return [...map.values()]
-      .filter((row) => Object.values(row.values).some((v) => v != null))
+      .filter((row) => {
+        if (this.appliedSb()) return true;
+        return Object.values(row.values).some((v) => v != null);
+      })
       .sort((a, b) => a.location.localeCompare(b.location) || a.sbname.localeCompare(b.sbname));
   });
 
