@@ -757,7 +757,14 @@ export class Admin implements OnInit {
       this.emailFirst = this.emailReminder = this.emailRelease = '';
       return;
     }
-    const cached = this.emailCache.get(horizon);
+
+    // The horizon select stores the numeric id as `value`, but email templates
+    // in the backend are keyed by the horizon name. Mirror the lab-cost logic
+    // and translate id -> name when looking up templates.
+    const horizonName = this.horizonRef().find((h) => h.value === horizon)?.text ?? horizon;
+
+    // Try cache lookup by both id and name to be resilient to stored keys.
+    const cached = this.emailCache.get(horizon) ?? this.emailCache.get(horizonName);
     if (cached) {
       this.emailFirst = cached.firstemail;
       this.emailReminder = cached.reminderemail;
@@ -768,9 +775,11 @@ export class Admin implements OnInit {
   }
   saveEmailTemplate() {
     if (!this.emailHorizon) return;
+    // Convert selected horizon id -> horizon name before saving to backend
+    const horizonName = this.horizonRef().find((h) => h.value === this.emailHorizon)?.text ?? this.emailHorizon;
     this.api
       .saveEmailTemplate({
-        horizon: this.emailHorizon,
+        horizon: horizonName,
         firstemail: this.emailFirst,
         reminderemail: this.emailReminder,
         releaseemail: this.emailRelease,
@@ -778,7 +787,13 @@ export class Admin implements OnInit {
       .subscribe({
         next: (r) => {
           if (r.success) {
+            // Update cache for both id and name keys so subsequent lookups succeed
             this.emailCache.set(this.emailHorizon, {
+              firstemail: this.emailFirst,
+              reminderemail: this.emailReminder,
+              releaseemail: this.emailRelease,
+            });
+            this.emailCache.set(horizonName, {
               firstemail: this.emailFirst,
               reminderemail: this.emailReminder,
               releaseemail: this.emailRelease,
