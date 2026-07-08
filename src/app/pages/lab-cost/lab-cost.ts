@@ -39,7 +39,7 @@ interface PivotRow {
 
         <div class="field">
           <label>Location</label>
-          <select [ngModel]="selectedLoc()" (ngModelChange)="selectedLoc.set($event)">
+          <select [ngModel]="selectedLoc()" (ngModelChange)="onLocChange($event)">
             <option value="">All</option>
             @for (loc of locOptions(); track loc) {
               <option [value]="loc">{{ loc }}</option>
@@ -49,7 +49,7 @@ interface PivotRow {
 
         <div class="field">
           <label>Service Bundle</label>
-          <select [ngModel]="selectedSb()" (ngModelChange)="selectedSb.set($event)">
+          <select [ngModel]="selectedSb()" (ngModelChange)="onSbChange($event)">
             <option value="">All</option>
             @for (sb of sbOptions(); track sb.value) {
               <option [value]="sb.value">{{ sb.text }}</option>
@@ -58,9 +58,6 @@ interface PivotRow {
         </div>
 
         <div class="field" style="justify-content: flex-end; flex-direction: row; gap: 0.5rem; align-items: flex-end;">
-          <button class="btn-search" (click)="loadData()" [disabled]="!selectedHorizon() || loading()">
-            &#128269; Search
-          </button>
           <button class="btn-export" (click)="exportToExcel()" [disabled]="pivotRows().length === 0">
             &#128190; Export to Excel
           </button>
@@ -72,9 +69,9 @@ interface PivotRow {
       } @else if (error()) {
         <p class="status status-error">{{ error() }}</p>
       } @else if (!selectedHorizon()) {
-        <p class="status">Select a horizon and click Search to view lab cost data.</p>
+        <p class="status">No horizon selected.</p>
       } @else if (pivotRows().length === 0 && !loading()) {
-        <p class="status">Click Search to load data, or no records found for the selected filters.</p>
+        <p class="status">No records found for the selected filters.</p>
       } @else {
         <div class="table-wrap" role="region" aria-label="Lab cost quarterly average" tabindex="0">
           <table>
@@ -334,7 +331,16 @@ export class LabCost implements OnInit {
     this.api.listHorizons().subscribe({
       next: (data) => {
         this.horizons.set(data);
-        if (data.length) this.selectedHorizon.set(data[0].value);
+        if (data.length) {
+          // choose the maximum horizon (by text) as default
+          const max = data.reduce((a, b) => (a.text >= b.text ? a : b));
+          this.selectedHorizon.set(max.value);
+          // default to all sb and all location
+          this.selectedSb.set('');
+          this.selectedLoc.set('');
+          // load data for default horizon
+          this.loadData();
+        }
       },
       error: () => this.error.set('Failed to load horizons.'),
     });
@@ -345,6 +351,22 @@ export class LabCost implements OnInit {
 
   protected onHorizonChange(value: string): void {
     this.selectedHorizon.set(value);
+    // when horizon changes, reset SB and Location to All and reload
+    this.selectedSb.set('');
+    this.selectedLoc.set('');
+    this.loadData();
+  }
+
+  protected onLocChange(value: string): void {
+    this.selectedLoc.set(value);
+    // apply current selections (horizon + location + sb)
+    this.loadData();
+  }
+
+  protected onSbChange(value: string): void {
+    this.selectedSb.set(value);
+    // apply current selections (horizon + location + sb)
+    this.loadData();
   }
 
   protected loadData(): void {
