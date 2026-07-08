@@ -354,29 +354,32 @@ export class LabCost implements OnInit {
     // when horizon changes, reset SB and Location to All and reload
     this.selectedSb.set('');
     this.selectedLoc.set('');
-    this.loadData();
+    this.fetchForCurrentSelection();
   }
 
   protected onLocChange(value: string): void {
     this.selectedLoc.set(value);
     // apply current selections (horizon + location + sb)
-    this.loadData();
+    this.fetchForCurrentSelection();
   }
 
   protected onSbChange(value: string): void {
     this.selectedSb.set(value);
     // apply current selections (horizon + location + sb)
-    this.loadData();
+    this.fetchForCurrentSelection();
   }
 
   protected loadData(): void {
+    this.fetchForCurrentSelection();
+  }
+
+  private fetchForCurrentSelection(): void {
     const h = this.selectedHorizon();
     if (!h) return;
 
-    // The lab cost view is keyed on the horizon name (e.g. "26-06"), not the id.
     const horizon = this.horizons().find(x => x.value === h)?.text ?? h;
 
-    // Apply selected filters only when Search is clicked.
+    // Apply the currently selected filters
     this.appliedSb.set(this.selectedSb());
     this.appliedLoc.set(this.selectedLoc());
 
