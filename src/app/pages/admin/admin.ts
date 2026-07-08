@@ -770,7 +770,29 @@ export class Admin implements OnInit {
       this.emailReminder = cached.reminderemail;
       this.emailRelease = cached.releaseemail;
     } else {
+      // If cache miss, attempt to fetch the template directly from the backend
       this.emailFirst = this.emailReminder = this.emailRelease = '';
+      this.api.getEmailTemplate(horizonName).subscribe({
+        next: (res) => {
+          this.emailFirst = res.firstemail ?? '';
+          this.emailReminder = res.reminderemail ?? '';
+          this.emailRelease = res.releaseemail ?? '';
+          // populate cache for future lookups
+          this.emailCache.set(horizon, {
+            firstemail: this.emailFirst,
+            reminderemail: this.emailReminder,
+            releaseemail: this.emailRelease,
+          });
+          this.emailCache.set(horizonName, {
+            firstemail: this.emailFirst,
+            reminderemail: this.emailReminder,
+            releaseemail: this.emailRelease,
+          });
+        },
+        error: () => {
+          // leave fields empty on error
+        }
+      });
     }
   }
   saveEmailTemplate() {
