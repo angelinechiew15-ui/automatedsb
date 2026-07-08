@@ -399,6 +399,42 @@ export class LabCost implements OnInit {
     this.api.getLabCostQtrAvg(horizon).subscribe({
       next: (data) => {
         this.allRows.set(data);
+        // If user selected a specific SB (and optionally a location),
+        // attempt to fill missing cost values using the same cost-demand
+        // logic used by the Service Bundle charts endpoint.
+        const sb = this.appliedSb();
+        const loc = this.appliedLoc();
+        if (sb) {
+          this.api.getCharts(sb, horizon, loc).subscribe({
+            next: (charts) => {
+              const costPoints = charts?.costDemand ?? [];
+              if (costPoints.length) {
+                const rows = [...this.allRows()];
+                for (const p of costPoints) {
+                  const fy = p.label;
+                  const val = p.value;
+                  // find matching row(s) for the sb+loc+fy and set value
+                  let found = false;
+                  for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i];
+                    if ((r.sb === sb || r.sbname === sb) && (!loc || r.location === loc) && r.fy === fy) {
+                      rows[i] = { ...r, value: val };
+                      found = true;
+                    }
+                  }
+                  if (!found && loc) {
+                    // add a synthetic row for this location/sb/fy
+                    rows.push({ location: loc, sb: sb, sbname: sb, fy, value: val });
+                  }
+                }
+                this.allRows.set(rows);
+              }
+            },
+            error: () => {
+              // ignore chart lookup errors
+            }
+          });
+        }
         this.loading.set(false);
       },
       error: () => {
