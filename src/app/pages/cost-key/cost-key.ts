@@ -15,13 +15,7 @@ interface SummaryCard {
   imports: [CommonModule, FormsModule],
   template: `
     <section class="page">
-      <div class="hero">
-        <div>
-          <p class="eyebrow">Cost Key</p>
-        </div>
-        
-      </div>
-
+     
       <div class="toolbar">
         <div class="field">
           <label for="fy-filter">FY</label>

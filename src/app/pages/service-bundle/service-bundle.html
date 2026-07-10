@@ -68,7 +68,12 @@
                 [labels]="comboLabels(demandLinePoints(c.tsRows, c.tsDemand), actualBarPoints(c.tsRows, c.tsActual))"
                 [datasets]="comboDatasets(demandLinePoints(c.tsRows, c.tsDemand), actualBarPoints(c.tsRows, c.tsActual), 'TSpM RFC Demand', 'TSpM Actual', '#478f7c', '#ab377a')"></app-chart-canvas>
             </figure>
+
+            <div class="sb-right">
             @if (showDetail()) {
+              <div class="sb-adder-bar">
+                <button type="button" class="sb-adder-btn" (click)="openAdder('TS')">TS Adder</button>
+              </div>
               <table class="sb-table sb-table-wide sb-head-ts">
                 <thead>
                   <tr>
@@ -103,12 +108,35 @@
                   <tr><th>FY Quarter</th><th>TSpM RFC Demand</th><th>TSpM Actual</th><th>Utilization (%)</th></tr>
                 </thead>
                 <tbody>
-                  @for (r of comboRows(c.tsDemand, c.tsActual); track r.label) {
+                  @for (r of comboRows(demandLinePoints(c.tsRows, c.tsDemand), actualBarPoints(c.tsRows, c.tsActual)); track r.label) {
                     <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.utilization }}</td></tr>
                   }
                 </tbody>
               </table>
             }
+              @if (isAllTab() && recentHorizonCols().length) {
+                <table class="sb-table sb-history sb-history-ts">
+                  <thead>
+                    <tr>
+                      <th>FY</th>
+                      @for (col of recentHorizonCols(); track col) {
+                        <th>{{ col }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of tsHistory(); track r.fy) {
+                      <tr>
+                        <td>{{ r.fy }}</td>
+                        @for (v of r.values; track $index) {
+                          <td>{{ roundForHistoryTab(v) }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
           </div>
         </section>
 
@@ -122,7 +150,12 @@
                 [labels]="comboLabelsAvg(demandLinePoints(c.rtuRows, c.rtuDemand), actualBarPoints(c.rtuRows, c.rtuActual))"
                 [datasets]="comboDatasets(demandLinePoints(c.rtuRows, c.rtuDemand), actualBarPoints(c.rtuRows, c.rtuActual), 'RTU RFC Demand', 'RTU Actual', '#aec067', '#5ea290')"></app-chart-canvas>
             </figure>
+
+            <div class="sb-right">
             @if (showDetail()) {
+              <div class="sb-adder-bar">
+                <button type="button" class="sb-adder-btn" (click)="openAdder('RTU')">RTU Adder</button>
+              </div>
               <table class="sb-table sb-table-wide sb-head-rtu">
                 <thead>
                   <tr>
@@ -148,7 +181,7 @@
                       <td>{{ r.changeActual }}</td>
                       <td>{{ r.baseActual }}</td>
                       <td>{{ r.utilization }}</td>
-                      <td>{{ r.rtuTs }}</td>
+                      <td>{{ r.rtuTs | number:'1.2-2' }}</td>
                     </tr>
                   }
                 </tbody>
@@ -159,12 +192,35 @@
                   <tr><th>FY Quarter</th><th>RTU RFC Demand</th><th>RTU Actual</th><th>Utilization (%)</th></tr>
                 </thead>
                 <tbody>
-                  @for (r of comboRows(c.rtuDemand, c.rtuActual, true); track r.label) {
+                  @for (r of comboRows(demandLinePoints(c.rtuRows, c.rtuDemand), actualBarPoints(c.rtuRows, c.rtuActual), true); track r.label) {
                     <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.utilization }}</td></tr>
                   }
                 </tbody>
               </table>
             }
+            @if (isAllTab() && recentHorizonCols().length) {
+              <table class="sb-table sb-history sb-history-rtu">
+                <thead>
+                  <tr>
+                    <th>FY</th>
+                    @for (col of recentHorizonCols(); track col) {
+                      <th>{{ col }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of rtuHistory(); track r.fy) {
+                    <tr>
+                      <td>{{ r.fy }}</td>
+                      @for (v of r.values; track $index) {
+                        <td>{{ roundForHistoryTab(v) }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            </div>
           </div>
         </section>
 
@@ -175,10 +231,15 @@
               <app-chart-canvas
                 type="bar"
                 [yAxisLabel]="'k EUR'"
-                [labels]="comboLabelsAvg(costDemandLinePoints(c.costRows, c.costDemand), costActualBarPoints(c.costRows, c.costActual))"
-                [datasets]="comboDatasets(costDemandLinePoints(c.costRows, c.costDemand), costActualBarPoints(c.costRows, c.costActual), 'Cost RFC Demand', 'Cost Actual', '#f5c631', '#928285')"></app-chart-canvas>
+                [labels]="comboLabelsAvg(costDemandLinePoints(c.costRows, c.costDemand, c.rtuRows), costActualBarPoints(c.costRows, c.costActual))"
+                [datasets]="comboDatasets(costDemandLinePoints(c.costRows, c.costDemand, c.rtuRows), costActualBarPoints(c.costRows, c.costActual), 'Cost RFC Demand', 'Cost Actual', '#f5c631', '#928285')"></app-chart-canvas>
             </figure>
+
+            <div class="sb-right">
             @if (showDetail()) {
+              <div class="sb-adder-bar">
+                <button type="button" class="sb-adder-btn" (click)="openAdder('COST')">Cost Adder</button>
+              </div>
               <table class="sb-table sb-table-wide sb-head-cost">
                 <thead>
                   <tr>
@@ -190,12 +251,12 @@
                     <th>Cost Actual</th>
                     <th>Adder Value Cost Actual</th>
                     <th>Cost Actual w/o Adder</th>
-                    <th>Deviation</th>
+                    <th>Deviation (%)</th>
                     <th>Cost/RTU</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of costDetailRows(c.costRows); track r.label) {
+                  @for (r of costDetailRows(c.costRows, c.rtuRows); track r.label) {
                     <tr>
                       <td>{{ r.label }}</td>
                       <td>{{ r.rfcWoDemand }}</td>
@@ -205,8 +266,8 @@
                       <td>{{ r.actual }}</td>
                       <td>{{ r.changeActual }}</td>
                       <td>{{ r.actualWithAdder }}</td>
-                      <td>{{ r.deviation === null ? '' : r.deviation }}</td>
-                      <td>{{ r.costRtu }}</td>
+                      <td>{{ r.deviation === null ? '' : (r.deviation | percent:'1.0-1') }}</td>
+                      <td>{{ r.costRtu | number:'1.2-2' }}</td>
                     </tr>
                   }
                 </tbody>
@@ -214,18 +275,42 @@
             } @else {
               <table class="sb-table sb-head-cost">
                 <thead>
-                  <tr><th>FY Quarter</th><th>Cost RFC Demand</th><th>Cost Actual</th></tr>
+                  <tr><th>FY Quarter</th><th>Cost RFC Demand</th><th>Cost Actual</th><th>Deviation (%)</th></tr>
                 </thead>
                 <tbody>
-                  @for (r of comboRows(c.costDemand, c.costActual, true); track r.label) {
-                    <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td></tr>
+                  @for (r of comboRows(costDemandLinePoints(c.costRows, c.costDemand, c.rtuRows), costActualBarPoints(c.costRows, c.costActual), true); track r.label) {
+                    <tr><td>{{ r.label }}</td><td>{{ r.demand }}</td><td>{{ r.actual }}</td><td>{{ r.deviation === null ? '' : (r.deviation | percent:'1.0-1') }}</td></tr>
                   }
                 </tbody>
               </table>
             }
+            @if (isAllTab() && recentHorizonCols().length) {
+              <table class="sb-table sb-history sb-history-cost">
+                <thead>
+                  <tr>
+                    <th>FY</th>
+                    @for (col of recentHorizonCols(); track col) {
+                      <th>{{ col }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of costHistory(); track r.fy) {
+                    <tr>
+                      <td>{{ r.fy }}</td>
+                      @for (v of r.values; track $index) {
+                        <td>{{ roundForHistoryTab(v) }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            </div>
           </div>
         </section>
 
+        @if (isAllTab()) {
         <section class="sb-category">
           <div class="sb-category-body">
             @if (loadingDetails()) {
@@ -319,6 +404,7 @@
             }
           </div>
         </section>
+        }
         
       </div>
     } @else {
@@ -330,3 +416,65 @@
     </p>
   }
 </div>
+
+@if (adderModalOpen()) {
+  <div class="sb-modal-backdrop" (click)="closeAdder()">
+    <div class="sb-modal" (click)="$event.stopPropagation()">
+      <div class="sb-modal-head">
+        <h3>{{ adderMeasureLabel() }} Adder</h3>
+        <button type="button" class="sb-modal-close" (click)="closeAdder()" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="sb-modal-meta">
+        <div><strong>Location:</strong> {{ adderLocation() }}</div>
+        <div><strong>Horizon:</strong> {{ horizonName() }}</div>
+        <div><strong>Service Bundle:</strong> {{ sbName() }}</div>
+      </div>
+
+      @if (loadingAdder()) {
+        <p class="sb-hint">Loading adder values…</p>
+      } @else if (adderData(); as a) {
+        <div class="sb-modal-tables">
+          <table class="sb-table sb-adder-table">
+            <thead>
+              <tr><th colspan="2">Adder for {{ adderMeasureLabel() }} Demand</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>{{ a.fyPy }}</td><td><input type="number" step="any" [(ngModel)]="adderForm.py" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q1</td><td><input type="number" step="any" [(ngModel)]="adderForm.q1" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q2</td><td><input type="number" step="any" [(ngModel)]="adderForm.q2" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q3</td><td><input type="number" step="any" [(ngModel)]="adderForm.q3" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q4</td><td><input type="number" step="any" [(ngModel)]="adderForm.q4" /></td></tr>
+              <tr><td>{{ a.fyNy }}</td><td><input type="number" step="any" [(ngModel)]="adderForm.ny" /></td></tr>
+            </tbody>
+          </table>
+
+          <table class="sb-table sb-adder-table">
+            <thead>
+              <tr><th colspan="2">Adder for {{ adderMeasureLabel() }} Actual</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>{{ a.fyPy }}</td><td><input type="number" step="any" [(ngModel)]="changeForm.py" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q1</td><td><input type="number" step="any" [(ngModel)]="changeForm.q1" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q2</td><td><input type="number" step="any" [(ngModel)]="changeForm.q2" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q3</td><td><input type="number" step="any" [(ngModel)]="changeForm.q3" /></td></tr>
+              <tr><td>{{ a.fyCy }} Q4</td><td><input type="number" step="any" [(ngModel)]="changeForm.q4" /></td></tr>
+              <tr><td>{{ a.fyNy }}</td><td><input type="number" step="any" [(ngModel)]="changeForm.ny" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (adderError()) {
+        <p class="sb-error">{{ adderError() }}</p>
+      }
+
+      <div class="sb-modal-actions">
+        <button type="button" class="sb-cancel-btn" (click)="closeAdder()" [disabled]="savingAdder()">Cancel</button>
+        <button type="button" class="sb-save-btn" (click)="saveAdder()" [disabled]="savingAdder() || loadingAdder()">
+          {{ savingAdder() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

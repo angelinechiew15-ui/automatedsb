@@ -74,8 +74,7 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
         <div class="table-wrap" role="region" aria-label="SB approval table" tabindex="0">
           <table>
             <thead>
-              <tr>
-                <th (click)="sortByColumn('horizon')" style="cursor: pointer;">Horizon{{ getSortIcon('horizon') }}</th>
+              <tr>              
                 <th (click)="sortByColumn('sbName')" style="cursor: pointer;">SB Name{{ getSortIcon('sbName') }}</th>
                 <th (click)="sortByColumn('publishDate')" style="cursor: pointer;">Publish Date{{ getSortIcon('publishDate') }}</th>
                 <th (click)="sortByColumn('customerGroup')" style="cursor: pointer;">Customer Group{{ getSortIcon('customerGroup') }}</th>
@@ -89,26 +88,25 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
               </tr>
             </thead>
             <tbody>
-              @for (r of sortedFilteredRows(); track r.horizon + '|' + r.sbName + '|' + r.customerName) {
+              @for (g of groupedRows(); track g.row.horizon + '|' + g.row.sbName + '|' + g.row.customerName) {
                 <tr>
-                  <td>{{ selectedHorizonName() }}</td>
-                  <td>{{ r.sbName }}</td>
-                  <td>{{ r.publishDate }}</td>
-                  <td>{{ r.customerGroup }}</td>
-                  <td>{{ r.customerName }}</td>
+                  @if (g.sbSpan > 0) {
+                    <td [attr.rowspan]="g.sbSpan">{{ g.row.sbName }}</td>
+                  }
+                  <td>{{ g.row.publishDate }}</td>
+                  <td>{{ g.row.customerGroup }}</td>
+                  <td>{{ g.row.customerName }}</td>
+                  <td>{{ g.row.approvalStatus }}</td>
+                  <td>{{ g.row.reason }}</td>
+                  <td>{{ g.row.approvalDate }}</td>
+                  <td>{{ g.row.sbStatus }}</td>
+                  <td>{{ g.row.releaseDate }}</td>
                   <td>
-                    <span class="badge" [class]="statusClass(r.approvalStatus)">{{ r.approvalStatus }}</span>
-                  </td>
-                  <td>{{ r.reason }}</td>
-                  <td>{{ r.approvalDate }}</td>
-                  <td>{{ r.sbStatus }}</td>
-                  <td>{{ r.releaseDate }}</td>
-                  <td>
-                    @if (canShowConditionalRelease(r)) {
-                      <button class="btn-conditional" (click)="openConditionalReleaseModal(r)">Conditional Release</button>
+                    @if (canShowConditionalRelease(g.row)) {
+                      <button class="btn-conditional" (click)="openConditionalReleaseModal(g.row)">Conditional Release</button>
                     }
-                    @if (r.conditionalRelease) {
-                      <div class="conditional-text">{{ r.conditionalRelease }}</div>
+                    @if (g.row.conditionalRelease) {
+                      <div class="conditional-text">{{ g.row.conditionalRelease }}</div>
                     }
                   </td>
                 </tr>
@@ -304,6 +302,26 @@ export class SbApproval implements OnInit {
       const bVal = (b as any)[col] ?? '';
       const cmp = String(aVal).localeCompare(String(bVal));
       return dir === 'asc' ? cmp : -cmp;
+    });
+  });
+
+  /**
+   * Rows augmented with the rowspan for the SB Name column so consecutive
+   * rows sharing the same SB name render the name once (merged cells).
+   * sbSpan > 0 marks the first row of a group (value = group size);
+   * sbSpan === 0 means the SB Name cell is covered by the row above.
+   */
+  protected readonly groupedRows = computed(() => {
+    const rows = this.sortedFilteredRows();
+    return rows.map((row, index) => {
+      if (index > 0 && rows[index - 1].sbName === row.sbName) {
+        return { row, sbSpan: 0 };
+      }
+      let sbSpan = 1;
+      for (let j = index + 1; j < rows.length && rows[j].sbName === row.sbName; j++) {
+        sbSpan++;
+      }
+      return { row, sbSpan };
     });
   });
 

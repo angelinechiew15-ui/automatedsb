@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "node server.mjs",
     "dev": "ng serve",
+    "dev:local": "ng serve --proxy-config proxy.conf.local.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

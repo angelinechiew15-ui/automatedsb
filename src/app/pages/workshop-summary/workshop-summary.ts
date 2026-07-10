@@ -211,13 +211,13 @@ interface DisplayRow extends GroupedSbRow {
                     </td>
                     <td class="col-text">{{ row.comment }}</td>
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'ts') != null ? (fyDemand(row, fy, 'ts') | number:'1.1-1') : '\u2014' }}</td>
+                      <td class="col-num">{{ (fyDemand(row, fy, 'ts') ?? 0) | number:'1.1-1' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'rtu') != null ? (fyDemand(row, fy, 'rtu') | number:'1.1-1') : '\u2014' }}</td>
+                      <td class="col-num">{{ (fyDemand(row, fy, 'rtu') ?? 0) | number:'1.1-1' }}</td>
                     }
                     @for (fy of activeFys(); track fy) {
-                      <td class="col-num">{{ fyDemand(row, fy, 'cost') != null ? (fyDemand(row, fy, 'cost') | number:'1.1-1') : '\u2014' }}</td>
+                      <td class="col-num">{{ (fyDemand(row, fy, 'cost') ?? 0) | number:'1.1-1' }}</td>
                     }
                     <td class="col-num col-change">{{ changeToPreviousYear(row, 'ts') != null ? ((changeToPreviousYear(row, 'ts')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>
                     <td class="col-num col-change">{{ changeToPreviousYear(row, 'rtu') != null ? ((changeToPreviousYear(row, 'rtu')! * 100) | number:'1.1-1') + '%' : '\u2014' }}</td>

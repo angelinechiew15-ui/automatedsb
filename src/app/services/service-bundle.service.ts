@@ -175,6 +175,41 @@ export interface ConditionalReleaseUpdateRequest {
   approvalId: number;
   remark: string;
 }
+
+/** The six editable Adder/Change slots: previous FY, current FY quarters and next FY. */
+export interface AdderValues {
+  py: number | null;
+  q1: number | null;
+  q2: number | null;
+  q3: number | null;
+  q4: number | null;
+  ny: number | null;
+}
+
+/** Response of GET /service-bundle/adder. */
+export interface AdderData {
+  success: boolean;
+  sbName: string;
+  location: string;
+  horizon: string;
+  measure: string;
+  fyPy: string;
+  fyCy: string;
+  fyNy: string;
+  adder: AdderValues;
+  change: AdderValues;
+}
+
+/** Body of POST /service-bundle/adder. */
+export interface AdderUpsertRequest {
+  sbName: string;
+  location: string;
+  measure: string;
+  horizon: string;
+  adder: AdderValues;
+  change: AdderValues;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ServiceBundleService {
   private readonly http = inject(HttpClient);
@@ -239,6 +274,21 @@ export class ServiceBundleService {
   /** Save or update a single detailed service-bundle row. */
   saveServiceBundleDetail(payload: ServiceBundleDetailUpsertRequest): Observable<{ success: boolean; horizon: string }> {
     return this.http.post<{ success: boolean; horizon: string }>(`${this.base}/service-bundle/details`, payload);
+  }
+
+  /** Adder (demand) and Change (actual) values for a SB / location / measure (TS/RTU/COST) / horizon. */
+  getAdder(sbName: string, location: string, measure: string, horizon: string): Observable<AdderData> {
+    const params = new HttpParams()
+      .set('sbName', sbName)
+      .set('location', location)
+      .set('measure', measure)
+      .set('horizon', horizon);
+    return this.http.get<AdderData>(`${this.base}/service-bundle/adder`, { params });
+  }
+
+  /** Replace the Adder/Change rows for a SB / location / measure / horizon. */
+  saveAdder(payload: AdderUpsertRequest): Observable<{ success: boolean; inserted: number }> {
+    return this.http.post<{ success: boolean; inserted: number }>(`${this.base}/service-bundle/adder`, payload);
   }
 
   /**
