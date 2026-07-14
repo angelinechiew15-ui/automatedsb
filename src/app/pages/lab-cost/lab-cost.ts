@@ -390,51 +390,24 @@ export class LabCost implements OnInit {
 
     const horizon = this.horizons().find(x => x.value === h)?.text ?? h;
 
-    // Apply the currently selected filters
+    // Apply the currently selected filters. Horizon is the mandatory filter;
+    // Location and Service Bundle are optional and narrow the result client-side
+    // via the `pivotRows` computed. The qtr-avg endpoint returns per-(location,
+    // sb, fy) rows for the whole horizon, so a single fetch supports all filter
+    // combinations:
+    //   - Horizon only              -> all locations, all SBs
+    //   - Horizon + Location        -> all SBs at that location
+    //   - Horizon + SB              -> that SB across all locations
+    //   - Horizon + Location + SB   -> the matching rows only
     this.appliedSb.set(this.selectedSb());
     this.appliedLoc.set(this.selectedLoc());
 
     this.loading.set(true);
     this.error.set(null);
+
     this.api.getLabCostQtrAvg(horizon).subscribe({
       next: (data) => {
         this.allRows.set(data);
-        // If user selected a specific SB (and optionally a location),
-        // attempt to fill missing cost values using the same cost-demand
-        // logic used by the Service Bundle charts endpoint.
-        const sb = this.appliedSb();
-        const loc = this.appliedLoc();
-        if (sb) {
-          this.api.getCharts(sb, horizon, loc).subscribe({
-            next: (charts) => {
-              const costPoints = charts?.costDemand ?? [];
-              if (costPoints.length) {
-                const rows = [...this.allRows()];
-                for (const p of costPoints) {
-                  const fy = p.label;
-                  const val = p.value;
-                  // find matching row(s) for the sb+loc+fy and set value
-                  let found = false;
-                  for (let i = 0; i < rows.length; i++) {
-                    const r = rows[i];
-                    if ((r.sb === sb || r.sbname === sb) && (!loc || r.location === loc) && r.fy === fy) {
-                      rows[i] = { ...r, value: val };
-                      found = true;
-                    }
-                  }
-                  if (!found && loc) {
-                    // add a synthetic row for this location/sb/fy
-                    rows.push({ location: loc, sb: sb, sbname: sb, fy, value: val });
-                  }
-                }
-                this.allRows.set(rows);
-              }
-            },
-            error: () => {
-              // ignore chart lookup errors
-            }
-          });
-        }
         this.loading.set(false);
       },
       error: () => {

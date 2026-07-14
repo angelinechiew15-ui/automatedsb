@@ -131,6 +131,7 @@ export interface LabSummaryRow {
   tsActual:      number | null;
   changeTs:      number | null;
   rtuRfcDemand:  number | null;
+  rtuRfcDemandWoAdder: number | null;
   adderRtu:      number | null;
   rtuTs:         number | null;
   rtuActual:     number | null;
@@ -138,6 +139,7 @@ export interface LabSummaryRow {
   costRfcWoDepr: number | null;
   depreciation:  number | null;
   costRfcDemand: number | null;
+  costRfcDemandWoAdder: number | null;
   adderCost:     number | null;
   costRtu:       number | null;
   costActual:    number | null;
@@ -299,6 +301,13 @@ export class ServiceBundleService {
   getLabCostQtrAvg(horizon: string): Observable<LabCostRow[]> {
     const params = new HttpParams().set('horizon', horizon);
     return this.http.get<LabCostRow[]>(`${this.base}/lab-cost/qtr-avg`, { params });
+  }
+
+  /** Detailed breakdown (tsRows, rtuRows, costRows) for a specific SB + horizon + optional location. */
+  getLabCostBreakdown(sb: string, horizon: string, loc = ''): Observable<{ tsRows: MeasureBreakdownRow[]; rtuRows: MeasureBreakdownRow[]; costRows: CostBreakdownRow[] }> {
+    let params = new HttpParams().set('sb', sb).set('horizon', horizon);
+    if (loc) params = params.set('loc', loc);
+    return this.http.get<{ tsRows: MeasureBreakdownRow[]; rtuRows: MeasureBreakdownRow[]; costRows: CostBreakdownRow[] }>(`${this.base}/lab-cost/breakdown`, { params });
   }
 
   /** All TS/RTU/Cost measures per (fyQuarter, location, horizon, sb) for the Lab Summary tab. */

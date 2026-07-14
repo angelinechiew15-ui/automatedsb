@@ -71,6 +71,24 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
       } @else if (rows().length === 0) {
         <p class="status">No data found.</p>
       } @else {
+        <div class="summary" role="region" aria-label="Approval statistics summary">
+          <div class="summary-card">
+            <span class="summary-label">Total Service Bundles</span>
+            <span class="summary-value">{{ approvalSummary().total }}</span>
+          </div>
+          <div class="summary-card card-approved">
+            <span class="summary-label">Approved</span>
+            <span class="summary-value">{{ approvalSummary().approved }}</span>
+          </div>
+          <div class="summary-card card-rejected">
+            <span class="summary-label">Rejected</span>
+            <span class="summary-value">{{ approvalSummary().rejected }}</span>
+          </div>
+          <div class="summary-card card-auto">
+            <span class="summary-label">Auto Approved</span>
+            <span class="summary-value">{{ approvalSummary().autoApproved }}</span>
+          </div>
+        </div>
         <div class="table-wrap" role="region" aria-label="SB approval table" tabindex="0">
           <table>
             <thead>
@@ -195,6 +213,19 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     .conditional-text { margin-top: 0.35rem; color: #374151; white-space: normal; }
     .status { margin-top: 0.75rem; color: #6b7280; }
     .status-error { color: #b00020; }
+    .summary {
+      display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;
+    }
+    .summary-card {
+      flex: 1 1 160px; min-width: 160px; background: #fff;
+      border: 1px solid #e5e7eb; border-left: 4px solid #ab377a; border-radius: 8px;
+      padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;
+    }
+    .summary-card.card-approved { border-left-color: #10b981; }
+    .summary-card.card-rejected { border-left-color: #ef4444; }
+    .summary-card.card-auto { border-left-color: #f59e0b; }
+    .summary-label { font-size: 0.8rem; font-weight: 500; color: #6b7280; }
+    .summary-value { font-size: 1.5rem; font-weight: 700; color: #1f2937; }
     .table-wrap {
       margin-top: 0.75rem; overflow-x: auto; overflow-y: auto; max-height: 70vh;
       border: 1px solid #d9dde3; border-radius: 8px; background: #fff;
@@ -236,7 +267,7 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
       padding: 1rem;
     }
     .modal-panel {
-      width: min(540px, 100%); background: #fff; border-radius: 10px;
+      box-sizing: border-box; width: min(540px, 100%); background: #fff; border-radius: 10px;
       border: 1px solid #e5e7eb; padding: 1rem 1.1rem;
       box-shadow: 0 16px 36px rgba(17, 24, 39, 0.24);
     }
@@ -248,11 +279,13 @@ import { LookupItem, SbApprovalRow, ServiceBundleService } from '../../services/
     }
     .modal-row label { font-weight: 600; font-size: 0.82rem; color: #374151; }
     .modal-row input,
+    .modal-row select,
     .modal-row textarea {
-      width: 100%; font: inherit; font-size: 0.88rem; color: #111827;
+      box-sizing: border-box; width: 100%; max-width: 100%; font: inherit; font-size: 0.88rem; color: #111827;
       border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem 0.6rem;
       background: #fff;
     }
+    .modal-row textarea { resize: vertical; }
     .modal-row input[readonly] { background: #f9fafb; }
     .modal-actions {
       display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem;
@@ -285,8 +318,30 @@ export class SbApproval implements OnInit {
   protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   protected readonly statusOptions = computed(() => {
-    const unique = [...new Set(this.rows().map(r => r.approvalStatus).filter(Boolean))].sort();
-    return unique.length ? unique : ['APPROVED', 'REJECTED', 'PENDING', 'NO_STATUS'];
+    // Options are derived solely from the actual approval status values returned
+    // by the API (sourced directly from cm_matrix_sb_approval). No hardcoded list.
+    return [...new Set(this.rows().map(r => r.approvalStatus).filter(Boolean))].sort();
+  });
+
+  /**
+   * Approval statistics for the currently displayed rows, counted per distinct
+   * service bundle (sbName). Approval status values come directly from
+   * cm_matrix_sb_approval: 'Y' = approved, 'N' = rejected, '' (empty) = auto approved.
+   */
+  protected readonly approvalSummary = computed(() => {
+    const statusBySb = new Map<string, string>();
+    for (const r of this.sortedFilteredRows()) {
+      if (!statusBySb.has(r.sbName)) {
+        statusBySb.set(r.sbName, (r.approvalStatus ?? '').trim());
+      }
+    }
+    let approved = 0, rejected = 0, autoApproved = 0;
+    for (const status of statusBySb.values()) {
+      if (status === 'Y') approved++;
+      else if (status === 'N') rejected++;
+      else autoApproved++;
+    }
+    return { total: statusBySb.size, approved, rejected, autoApproved };
   });
 
   protected readonly sortedFilteredRows = computed(() => {
