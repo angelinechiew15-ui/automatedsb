@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import { LookupItem, ServiceBundleService } from '../../services/service-bundle.service';
 import { CostKeyOverviewRow, CostKeyService } from '../../services/cost-key.service';
 
@@ -59,6 +60,9 @@ interface SummaryCard {
         <button class="btn-refresh" type="button" (click)="loadData()" [disabled]="loading() || !selectedHorizon()">
           {{ loading() ? 'Refreshing...' : 'Refresh overview' }}
         </button>
+        <button class="btn-export" type="button" (click)="exportToExcel()" [disabled]="filteredRows().length === 0">
+          Export to Excel
+        </button>
       </div>
 
       <div class="summary-grid">
@@ -88,10 +92,13 @@ interface SummaryCard {
                 <th scope="col">Client Corridor</th>
                 <th scope="col">WBS Element</th>
                 <th scope="col" class="num-h">PL key</th>
-                <th scope="col" class="num-h">Cost (k EUR)</th>
                 <th scope="col" class="num-h">Key</th>
-                @for (horizon of pastHorizons(); track horizon.text) {
-                  <th scope="col" class="num-h">{{ horizon.text }}</th>
+                <th scope="col" class="num-h">Cost (K Eur)</th>
+                <th scope="col" class="num-h">Calculated Cost - {{ selectedHorizon() }}</th>  
+                <th scope="col" class="num-h">Cost RFC Demand - {{ selectedHorizon() }}</th>                              
+                @for (horizon of calculationPastHorizons(); track horizon) {
+                  <th scope="col" class="num-h">Calculated Cost - {{ horizon }}</th>
+                  <th scope="col" class="num-h">Cost RFC Demand- {{ horizon }}</th>
                 }
               </tr>
             </thead>
@@ -103,10 +110,13 @@ interface SummaryCard {
                   <td>{{ row.clientCorridor || '-' }}</td>
                   <td>{{ row.wbsElement || '-' }}</td>
                   <td class="num">{{ formatPercent(row.ccPercent) }}</td>
-                  <td class="num">{{ formatAmount(row.costKeur) }}</td>
-                  <td class="num">{{ formatKey(row.key) }}</td>
-                  @for (horizon of pastHorizons(); track horizon.text) {
-                    <td class="num">{{ formatAmount(row.historicalCosts[horizon.text]) }}</td>
+                  <td class="num">{{ formatKey(tableKeyForRow(row)) }}</td>
+                  <td class="num">{{ formatAmount(costKeyForRow(row)) }}</td>
+                  <td class="num">{{ formatAmount(calculatedCostForHorizon(row, selectedHorizon())) }}</td>  
+                  <td class="num">{{ formatAmount(costDemandForHorizon(row, selectedHorizon())) }}</td>                                 
+                  @for (horizon of calculationPastHorizons(); track horizon) {
+                    <td class="num">{{ formatAmount(calculatedCostForHorizon(row, horizon)) }}</td>
+                    <td class="num">{{ formatAmount(costDemandForHorizon(row, horizon)) }}</td>
                   }
                 </tr>
               }
@@ -170,6 +180,22 @@ interface SummaryCard {
     }
 
     .btn-refresh:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-export {
+      border: 1px solid transparent;
+      background: #8b2f62;
+      color: #fff;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-export:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
@@ -307,13 +333,29 @@ export class CostKeyOverview implements OnInit {
     return horizons;
   });
 
+  protected readonly calculationHorizons = computed(() => {
+    const selected = this.selectedHorizon();
+    if (!selected) {
+      return [] as string[];
+    }
+
+    return [selected, ...this.pastHorizons().map((horizon) => horizon.text)];
+  });
+
+  protected readonly calculationPastHorizons = computed(() => this.calculationHorizons().slice(1));
+
   protected readonly filteredRows = computed(() => {
     const fy = this.selectedFy();
     const loc = this.selectedLoc();
     const sb = this.selectedSb();
 
+    // Derive the expected FY from the selected horizon: 26-xx → "25/26", 25-xx → "24/25", etc.
+    // An explicit FY dropdown selection overrides the derived default.
+    const horizonFy = this.deriveFyFromHorizon(this.selectedHorizon());
+    const activeFy = fy || horizonFy;
+
     return this.rows()
-      .filter((row) => (!fy || row.fy === fy) && (!loc || row.loc === loc) && (!sb || row.serviceBundle === sb))
+      .filter((row) => (!activeFy || row.fy === activeFy) && (!loc || row.loc === loc) && (!sb || row.serviceBundle === sb))
       .slice()
       .sort((a, b) => {
         const byFy = a.fy.localeCompare(b.fy);
@@ -340,18 +382,153 @@ export class CostKeyOverview implements OnInit {
       });
   });
 
-  protected readonly summaryCards = computed<SummaryCard[]>(() => {
+  protected readonly demandByGroupAndHorizon = computed(() => {
     const rows = this.filteredRows();
-    const totalCost = rows.reduce((sum, row) => sum + (row.costKeur ?? 0), 0);
-    const averageKey = rows.length
-      ? rows.reduce((sum, row) => sum + (row.key ?? 0), 0) / rows.length
-      : 0;
+    const horizons = this.calculationHorizons();
+    const selected = this.selectedHorizon();
+    const grouped = new Map<string, CostKeyOverviewRow[]>();
+
+    for (const row of rows) {
+      const key = this.groupKey(row);
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.push(row);
+      } else {
+        grouped.set(key, [row]);
+      }
+    }
+
+    const result = new Map<string, Map<string, number | null>>();
+    for (const [groupKey, groupRows] of grouped) {
+      const perHorizon = new Map<string, number | null>();
+
+      for (const horizon of horizons) {
+        if (horizon === selected) {
+          const current = groupRows.reduce((sum, row) => sum + (row.costKeur ?? 0), 0);
+          perHorizon.set(horizon, current);
+          continue;
+        }
+
+        perHorizon.set(horizon, this.groupHistoricalCost(groupRows, horizon));
+      }
+
+      result.set(groupKey, perHorizon);
+    }
+
+    return result;
+  });
+
+  protected readonly calculatedCostByGroupAndHorizon = computed(() => {
+    const horizons = this.calculationHorizons();
+    const demandMaps = this.demandByGroupAndHorizon();
+    const result = new Map<string, Map<string, number | null>>();
+
+    for (const [groupKey, demandByHorizon] of demandMaps) {
+      const calcByHorizon = new Map<string, number | null>();
+
+      for (const horizon of horizons) {
+        calcByHorizon.set(horizon, this.calculateCostForHorizon(horizon, demandByHorizon));
+      }
+
+      result.set(groupKey, calcByHorizon);
+    }
+
+    return result;
+  });
+
+  protected readonly calculatedRowCostByRow = computed(() => {
+    const rows = this.filteredRows();
+    const selected = this.selectedHorizon();
+    const costByGroup = this.calculatedCostByGroupAndHorizon();
+    const result = new Map<string, number | null>();
+
+    for (const row of rows) {
+      const groupCost = costByGroup.get(this.groupKey(row))?.get(selected);
+      if (groupCost == null || Number.isNaN(groupCost)) {
+        result.set(this.rowKey(row), null);
+        continue;
+      }
+
+      result.set(this.rowKey(row), groupCost * (row.ccPercent ?? 0));
+    }
+
+    return result;
+  });
+
+  protected readonly tableKeyByRow = computed(() => {
+    const rows = this.filteredRows();
+    const totalCostKeur = rows.reduce((sum, row) => {
+      const costKeur = this.costKeyForRow(row);
+      return sum + (costKeur == null || Number.isNaN(costKeur) ? 0 : costKeur);
+    }, 0);
+
+    const result = new Map<string, number | null>();
+    for (const row of rows) {
+      const rowCostKeur = this.costKeyForRow(row);
+      if (rowCostKeur == null || Number.isNaN(rowCostKeur) || totalCostKeur <= 0) {
+        result.set(this.rowKey(row), null);
+      } else {
+        result.set(this.rowKey(row), rowCostKeur / totalCostKeur);
+      }
+    }
+
+    return result;
+  });
+
+  protected readonly calculatedKeyByRow = computed(() => {
+    const rows = this.filteredRows();
+    const rowCosts = this.calculatedRowCostByRow();
+    const result = new Map<string, number | null>();
+
+    const partitions = new Map<string, number>();
+    for (const row of rows) {
+      const rowCost = rowCosts.get(this.rowKey(row));
+      if (rowCost == null || Number.isNaN(rowCost)) {
+        continue;
+      }
+
+      const partition = this.partitionKey(row);
+      partitions.set(partition, (partitions.get(partition) ?? 0) + rowCost);
+    }
+
+    for (const row of rows) {
+      const rowId = this.rowKey(row);
+      const partition = this.partitionKey(row);
+      const numerator = rowCosts.get(rowId);
+      const denominator = partitions.get(partition) ?? 0;
+
+      if (numerator == null || Number.isNaN(numerator) || denominator <= 0) {
+        result.set(rowId, null);
+      } else {
+        result.set(rowId, numerator / denominator);
+      }
+    }
+
+    return result;
+  });
+
+  protected readonly summaryCards = computed<SummaryCard[]>(() => {
+    // Total Cost RFC Demand sums costKeur for the selected horizon (FY) + location
+    // across ALL service bundles, so the card reflects the full location total.
+    const horizonFy = this.deriveFyFromHorizon(this.selectedHorizon());
+    const loc = this.selectedLoc();
+    const totalRfcDemand = this.rows()
+      .filter((row) => (!horizonFy || row.fy === horizonFy) && (!loc || row.loc === loc))
+      .reduce((sum, row) => sum + (row.costKeur ?? 0), 0);
+
+    // Total Cost (kEUR) follows the requested formula over displayed records:
+    // sum of [Calculated Cost (selected horizon) * PL key].
+    const totalCostKeur = this.filteredRows().reduce((sum, row) => {
+      const value = this.costKeyForRow(row);
+      return sum + (value == null || Number.isNaN(value) ? 0 : value);
+    }, 0);
 
     return [
       { label: 'Selected Horizon', value: this.selectedHorizon() || 'All' },
       { label: 'Selected Location', value: this.selectedLoc() || 'All' },
-      { label: 'Total Cost (k EUR)', value: this.formatAmount(totalCost) },
-      { label: 'Average Key', value: this.formatKey(averageKey) },
+      { label: 'Total Cost RFC Demand (k EUR)', value: this.formatAmount(totalRfcDemand) },
+      { label: 'Total Cost (k EUR)', value: this.formatAmount(totalCostKeur) },
+      //{ label: 'Average Key', value: this.formatKey(averageKey) },
     ];
   });
 
@@ -394,6 +571,82 @@ export class CostKeyOverview implements OnInit {
     });
   }
 
+  protected exportToExcel(): void {
+    const rows = this.filteredRows();
+    if (!rows.length) {
+      return;
+    }
+
+    const selected = this.selectedHorizon();
+    const pastHorizons = this.calculationPastHorizons();
+
+    const headerRow: string[] = [
+      'Location',
+      'Service Bundle',
+      'Client Corridor',
+      'WBS Element',
+      'PL Key',
+      'Key',
+      'Cost (K Eur)',
+      `Calculated Cost - ${selected}`,
+      `Cost RFC Demand - ${selected}`,
+    ];
+
+    for (const horizon of pastHorizons) {
+      headerRow.push(`Calculated Cost - ${horizon}`);
+      headerRow.push(`Cost RFC Demand - ${horizon}`);
+    }
+
+    const wsData: (string | number)[][] = [headerRow];
+
+    for (const row of rows) {
+      const dataRow: (string | number)[] = [
+        row.loc,
+        row.serviceBundle,
+        row.clientCorridor || '-',
+        row.wbsElement || '-',
+        row.ccPercent ?? 0,
+        this.tableKeyForRow(row) ?? 0,
+        this.costKeyForRow(row) ?? 0,
+        this.calculatedCostForHorizon(row, selected) ?? 0,
+        this.costDemandForHorizon(row, selected) ?? 0,
+      ];
+
+      for (const horizon of pastHorizons) {
+        dataRow.push(this.calculatedCostForHorizon(row, horizon) ?? 0);
+        dataRow.push(this.costDemandForHorizon(row, horizon) ?? 0);
+      }
+
+      wsData.push(dataRow);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    const columnCount = headerRow.length;
+    ws['!cols'] = Array.from({ length: columnCount }, (_, i) => {
+      if (i === 0) return { wch: 18 };
+      if (i === 1) return { wch: 28 };
+      if (i === 2) return { wch: 16 };
+      if (i === 3) return { wch: 28 };
+      return { wch: 14 };
+    });
+
+    const rowCount = rows.length + 1;
+    for (let r = 2; r <= rowCount; r++) {
+      ws[`E${r}`].z = '0.00%';
+      ws[`F${r}`].z = '0.00%';
+
+      for (let c = 7; c <= columnCount; c++) {
+        const col = XLSX.utils.encode_col(c - 1);
+        ws[`${col}${r}`].z = '#,##0.00';
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cost Key Overview');
+    XLSX.writeFile(wb, `cost-key-overview-${selected || 'no-horizon'}.xlsx`);
+  }
+
   protected formatAmount(value: number | null | undefined): string {
     if (value == null || Number.isNaN(value)) {
       return '-';
@@ -403,6 +656,208 @@ export class CostKeyOverview implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
+  }
+
+  protected calculatedCost(row: CostKeyOverviewRow): number | null {
+    const value = this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(this.selectedHorizon());
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected costDemandForHorizon(row: CostKeyOverviewRow, horizon: string): number | null {
+    const value = this.demandByGroupAndHorizon().get(this.groupKey(row))?.get(horizon);
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected calculatedCostForHorizon(row: CostKeyOverviewRow, horizon: string): number | null {
+    const value = this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(horizon);
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected costKeyForRow(row: CostKeyOverviewRow): number | null {
+    const calculatedCost = this.calculatedCostForHorizon(row, this.selectedHorizon());
+    const plKey = row.ccPercent;
+
+    if (calculatedCost == null || Number.isNaN(calculatedCost) || plKey == null || Number.isNaN(plKey)) {
+      return null;
+    }
+
+    return calculatedCost * plKey;
+  }
+
+  protected tableKeyForRow(row: CostKeyOverviewRow): number | null {
+    const value = this.tableKeyByRow().get(this.rowKey(row));
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected calculatedRowCost(row: CostKeyOverviewRow): number | null {
+    const value = this.calculatedRowCostByRow().get(this.rowKey(row));
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected calculatedKey(row: CostKeyOverviewRow): number | null {
+    const value = this.calculatedKeyByRow().get(this.rowKey(row));
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  protected readonly costKeurKeyByRow = computed(() => {
+    const rows = this.filteredRows();
+    const partitions = new Map<string, number>();
+    for (const row of rows) {
+      const p = this.partitionKey(row);
+      partitions.set(p, (partitions.get(p) ?? 0) + (row.costKeur ?? 0));
+    }
+    const result = new Map<string, number | null>();
+    for (const row of rows) {
+      const denom = partitions.get(this.partitionKey(row)) ?? 0;
+      result.set(this.rowKey(row), denom > 0 ? (row.costKeur ?? 0) / denom : null);
+    }
+    return result;
+  });
+
+  protected costKeurKey(row: CostKeyOverviewRow): number | null {
+    const value = this.costKeurKeyByRow().get(this.rowKey(row));
+    return value == null || Number.isNaN(value) ? null : value;
+  }
+
+  private groupKey(row: CostKeyOverviewRow): string {
+    return `${row.fy}|${row.loc}|${row.serviceBundle}`;
+  }
+
+  private partitionKey(row: CostKeyOverviewRow): string {
+    return `${row.fy}|${row.loc}`;
+  }
+
+  private rowKey(row: CostKeyOverviewRow): string {
+    return `${row.fy}|${row.loc}|${row.serviceBundle}|${row.clientCorridor}|${row.wbsElement}`;
+  }
+
+  private groupHistoricalCost(rows: CostKeyOverviewRow[], horizon: string | null): number | null {
+    if (!horizon) {
+      return null;
+    }
+
+    let sum = 0;
+    let foundAny = false;
+
+    for (const row of rows) {
+      const value = row.historicalCosts[horizon];
+      if (value == null || Number.isNaN(value)) {
+        continue;
+      }
+
+      sum += value;
+      foundAny = true;
+    }
+
+    return foundAny ? sum : null;
+  }
+
+  private calculateCostForHorizon(horizon: string, demandByHorizon: Map<string, number | null>): number | null {
+    const demandCurrent = demandByHorizon.get(horizon);
+    if (demandCurrent == null || Number.isNaN(demandCurrent)) {
+      return null;
+    }
+
+    const parsed = this.parseHorizon(horizon);
+    if (!parsed) {
+      return null;
+    }
+
+    if (parsed.period === 9) {
+      // xx-09: Calculated = Cost RFC Demand.
+      return demandCurrent;
+    }
+
+    const prev1 = this.previousHorizon(horizon, 1);
+    const demandPrev1 = prev1 ? demandByHorizon.get(prev1) : null;
+
+    if (parsed.period === 12) {
+      // xx-12 = [(Dxx12*12) - (Dprev1*3)] / 9
+      if (demandPrev1 == null || Number.isNaN(demandPrev1)) {
+        return null;
+      }
+      return ((demandCurrent * 12) - (demandPrev1 * 3)) / 9;
+    }
+
+    const prev2 = this.previousHorizon(horizon, 2);
+    const demandPrev2 = prev2 ? demandByHorizon.get(prev2) : null;
+
+    if (parsed.period === 3) {
+      // xx-03 = [(Dxx03*12) - (Dprev1*3) - (Dprev2*3)] / 6
+      if (demandPrev1 == null || Number.isNaN(demandPrev1) || demandPrev2 == null || Number.isNaN(demandPrev2)) {
+        return null;
+      }
+      return ((demandCurrent * 12) - (demandPrev1 * 3) - (demandPrev2 * 3)) / 6;
+    }
+
+    const prev3 = this.previousHorizon(horizon, 3);
+    const demandPrev3 = prev3 ? demandByHorizon.get(prev3) : null;
+
+    if (parsed.period === 6) {
+      // xx-06 = [(Dxx06*12) - (Dprev1*3) - (Dprev2*3) - (Dprev3*3)] / 3
+      if (
+        demandPrev1 == null || Number.isNaN(demandPrev1) ||
+        demandPrev2 == null || Number.isNaN(demandPrev2) ||
+        demandPrev3 == null || Number.isNaN(demandPrev3)
+      ) {
+        return null;
+      }
+      return ((demandCurrent * 12) - (demandPrev1 * 3) - (demandPrev2 * 3) - (demandPrev3 * 3)) / 3;
+    }
+
+    return null;
+  }
+
+  private previousHorizon(horizon: string, steps: number): string | null {
+    const parsed = this.parseHorizon(horizon);
+    if (!parsed || steps <= 0) {
+      return null;
+    }
+
+    let year = parsed.year;
+    let period = parsed.period;
+
+    for (let step = 0; step < steps; step++) {
+      if (period === 3) {
+        period = 12;
+        year = (year + 99) % 100;
+      } else if (period === 6) {
+        period = 3;
+      } else if (period === 9) {
+        period = 6;
+      } else if (period === 12) {
+        period = 9;
+      } else {
+        return null;
+      }
+    }
+
+    return `${year.toString().padStart(2, '0')}-${period.toString().padStart(2, '0')}`;
+  }
+
+  private parseHorizon(value: string): { year: number; period: number } | null {
+    const match = /^(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return null;
+    }
+
+    return {
+      year: Number.parseInt(match[1], 10),
+      period: Number.parseInt(match[2], 10),
+    };
+  }
+
+  /**
+   * Derives the expected current-FY string from a horizon code.
+   * Horizon "26-xx" → "25/26", "25-xx" → "24/25", "27-xx" → "26/27", etc.
+   * Returns null when the horizon cannot be parsed.
+   */
+  private deriveFyFromHorizon(horizon: string): string | null {
+    const match = /^(\d{2})-\d{2}$/.exec(horizon.trim());
+    if (!match) return null;
+    const yr = parseInt(match[1], 10);
+    const prev = ((yr - 1 + 100) % 100).toString().padStart(2, '0');
+    return `${prev}/${match[1]}`;
   }
 
   protected formatKey(value: number | null | undefined): string {
