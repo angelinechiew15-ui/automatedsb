@@ -16,10 +16,17 @@ export interface OwnerDeliveranceStatus {
   red: number;
 }
 
+export interface BundleDeliveranceStatus {
+  serviceBundle: string;
+  sbOwner: string;
+  statusIndicator: string;
+}
+
 export interface SbDeliveranceData {
   horizon: string;
   summary: DeliveranceStatus;
   byOwner: OwnerDeliveranceStatus[];
+  byBundle: BundleDeliveranceStatus[];
 }
 
 @Injectable({ providedIn: 'root' })

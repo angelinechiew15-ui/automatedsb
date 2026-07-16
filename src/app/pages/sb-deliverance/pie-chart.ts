@@ -18,7 +18,7 @@ Chart.register(...registerables);
   selector: 'app-pie-chart',
   standalone: true,
   template: '<canvas #canvas></canvas>',
-  styles: [':host{display:block;position:relative;width:100%;height:320px}'],
+  styles: [':host{display:block;position:relative;width:100%;height:200px}'],
 })
 export class PieChart implements AfterViewInit, OnChanges, OnDestroy {
   @Input() labels: string[] = [];

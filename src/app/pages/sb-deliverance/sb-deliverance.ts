@@ -42,7 +42,7 @@ interface HorizonOption {
             <app-pie-chart
               [labels]="['Complete <= due date', 'Published within 7 days after overdue', 'Published after 7 days from due date']"
               [data]="[data()!.summary.green, data()!.summary.lightGreen, data()!.summary.red]"
-              [colors]="['#16a34a', '#84cc16', '#dc2626']"
+              [colors]="['#478f7c', '#9bc3b7', '#e30034']"
             ></app-pie-chart>
             <div class="legend">
               <div class="legend-item">
@@ -82,6 +82,41 @@ interface HorizonOption {
                     <td class="num status-light-green">{{ owner.lightGreen }}</td>
                     <td class="num status-red">{{ owner.red }}</td>
                     <td class="num status-total"><strong>{{ owner.green + owner.lightGreen + owner.red }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <h2>Deliverance Status by Service Bundle</h2>
+          <div class="table-wrap" role="region" aria-label="Deliverance status by service bundle" tabindex="0">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Service Bundle</th>
+                  <th scope="col">SB Owner</th>
+                  <th scope="col">Status Indicator</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (bundle of data()!.byBundle; track bundle.serviceBundle + '|' + bundle.sbOwner + '|' + bundle.statusIndicator) {
+                  <tr>
+                    <td>{{ bundle.serviceBundle || 'Unassigned' }}</td>
+                    <td>{{ bundle.sbOwner }}</td>
+                    <td>
+                      <span
+                        class="status-dot"
+                        [class.status-dot-green]="bundle.statusIndicator === 'Complete <= Due Date'"
+                        [class.status-dot-light-green]="bundle.statusIndicator === 'Published Within 7 Days After Due Date'"
+                        [class.status-dot-red]="bundle.statusIndicator === 'Published After 7 Days From Due Date'"
+                        [attr.title]="bundle.statusIndicator"
+                        [attr.aria-label]="bundle.statusIndicator"
+                      >
+                        <span class="sr-only">{{ bundle.statusIndicator }}</span>
+                      </span>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -174,7 +209,7 @@ interface HorizonOption {
     .chart-section {
       background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      border-radius: 5px;
       padding: 1.5rem;
       box-shadow: 0 6px 16px rgba(31, 41, 55, 0.04);
     }
@@ -208,15 +243,15 @@ interface HorizonOption {
     }
 
     .legend-color.green {
-      background: #16a34a;
+      background: #478f7c;
     }
 
     .legend-color.light-green {
-      background: #84cc16;
+      background: #9bc3b7;
     }
 
     .legend-color.red {
-      background: #dc2626;
+      background: #e30034;
     }
 
     .table-section {
@@ -273,20 +308,54 @@ interface HorizonOption {
     }
 
     td.status-green {
-      color: #16a34a;
+      color: #478f7c;
     }
 
     td.status-light-green {
-      color: #84cc16;
+      color: #9bc3b7;
     }
 
     td.status-red {
-      color: #dc2626;
+      color: #e30034;
     }
 
     td.status-total {
       background: #f9fafb;
       font-weight: 600;
+    }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+    }
+
+    .status-dot-green {
+      background: #478f7c;
+    }
+
+    .status-dot-light-green {
+      background: #9bc3b7;
+    }
+
+    .status-dot-red {
+      background: #e30034;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     tbody tr:hover {
