@@ -1,0 +1,108 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^oc whoami; oc project -q; oc get bc -o name 2>\\$null$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc start-build automatedsbapi-git --follow$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc get deploy,dc -l app=automatedsbapi-git -o name 2>\\$null; echo \"---\"; oc get pods -l app=automatedsbapi-git 2>\\$null$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc rollout status deployment/automatedsbapi-git --timeout=120s$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$i=1; Get-Content src/app/app\\.ts \\| ForEach-Object \\{ '\\{0,4\\}: \\{1\\}' -f \\$i, \\$_; \\$i\\+\\+ \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$i=1; Get-Content src/app/services/cost-key\\.service\\.ts \\| ForEach-Object \\{ '\\{0,4\\}: \\{1\\}' -f \\$i, \\$_; \\$i\\+\\+ \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$i=1; Get-Content src/app/pages/cost-key/cost-key\\.ts \\| ForEach-Object \\{ '\\{0,4\\}: \\{1\\}' -f \\$i, \\$_; \\$i\\+\\+ \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api; dotnet build 2>&1 \\| Select-Object -First 50$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^powershell -NoProfile -Command \"\\$env:API_TARGET='https://automatedsbapi-git-play-rptdma\\.ap-sg-2\\.icp\\.infineon\\.com'; npm run start\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$env:API_TARGET='https://automatedsbapi-git-play-rptdma\\.ap-sg-2\\.icp\\.infineon\\.com'; node server\\.mjs$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api\\\\AutomatedSb\\.Api; \\$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet watch run --urls \"http://localhost:8080\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^npx ng serve --proxy-config proxy\\.conf\\.local\\.json$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Test-NetConnection -ComputerName localhost -Port 8080 -InformationLevel Quiet$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Get-NetTCPConnection -LocalPort 8080 -State Listen \\| Select-Object -First 1 \\| ForEach-Object \\{ Get-Process -Id \\$_\\.OwningProcess \\} \\| Select-Object Id, ProcessName, Path$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^if \\(Test-Path 'C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api'\\) \\{ Get-ChildItem 'C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api' -Filter \\*\\.csproj -Recurse -Depth 2 \\| Select-Object FullName; Get-ChildItem 'C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api' -Filter \\*\\.sln \\| Select-Object FullName \\} else \\{ 'MISSING' \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$p='C:\\\\Users\\\\angeline\\\\AutomatedSb\\.Api\\\\AutomatedSb\\.Api'; Get-ChildItem \\$p\\\\Properties\\\\launchSettings\\.json -EA SilentlyContinue \\| ForEach-Object \\{ \"---\\$\\(\\$_\\.FullName\\)---\"; Get-Content \\$_\\.FullName -Raw \\}; Select-String -Path \"\\$p\\\\Program\\.cs\" -Pattern 'Urls\\|8080\\|UseUrls\\|listen' -SimpleMatch -EA SilentlyContinue$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Get-Location; git status --short; git branch --show-current; git remote -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Test-Path src/app/pages/cost-key-report/cost-key-report\\.ts; Test-Path src/app/services/cost-key-report\\.service\\.ts; rg \"cost-key-report\" src/app/app\\.routes\\.ts src/app/app\\.ts$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git add src/app/pages/cost-key-overview/cost-key-overview\\.ts src/app/pages/cost-key/cost-key\\.ts; git commit -m \"Update Cost Key and Overview tables and export workflow\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git push origin master$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc whoami; oc project; oc get bc; oc get deploy$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc start-build automatedsbapi-git --wait --follow$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc rollout status deploy/automatedsbapi-git --timeout=300s; oc start-build automatedsb-git --wait --follow$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc rollout status deploy/automatedsb-git --timeout=300s; oc get pods -l app=automatedsb-git -o wide; oc get pods -l app=automatedsbapi-git -o wide$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^oc get bc automatedsbapi-git -o jsonpath='\\{\\.spec\\.source\\.git\\.uri\\} \\{\\.status\\.lastVersion\\} \\{\\.status\\.lastVersionRevision\\.git\\.commit\\}' ; Write-Host '' ; oc get build automatedsbapi-git-108 -o jsonpath='\\{\\.spec\\.revision\\.git\\.commit\\} \\{\\.status\\.phase\\}' ; Write-Host '' ; oc get build automatedsb-git-127 -o jsonpath='\\{\\.spec\\.revision\\.git\\.commit\\} \\{\\.status\\.phase\\}'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Test-NetConnection -ComputerName localhost -Port 8080$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

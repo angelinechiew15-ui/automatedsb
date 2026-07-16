@@ -1,0 +1,25 @@
+
+> automatedsb@0.0.0 build
+> ng build
+
+[33mΓ¥»[39m Building...
+
+> automatedsb@0.0.0 build
+> ng build
+
+[33mΓ¥»[39m Building...
+C:\Users\angeline\automatedsb\node_modules\esbuild\lib\main.js:849
+      let swap = new Uint8Array(limit * 2);
+                 ^
+
+RangeError: Array buffer allocation failed
+    at new ArrayBuffer (<anonymous>)
+    at new Uint8Array (<anonymous>)
+    at Socket.readFromStdout (C:\Users\angeline\automatedsb\node_modules\esbuild\lib\main.js:849:18)
+    at Socket.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+    at Readable.push (node:internal/streams/readable:394:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+
+Node.js v24.15.0

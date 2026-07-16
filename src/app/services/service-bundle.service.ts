@@ -267,6 +267,15 @@ export class ServiceBundleService {
     return this.http.get<ServiceBundleCharts>(`${this.base}/service-bundle/charts`, { params });
   }
 
+  /** History data for 5 recent horizons (TS/RTU/Cost rows and demand). */
+  getHistory(sbId: string, horizon: string, location = ''): Observable<any> {
+    let params = new HttpParams().set('sbId', sbId).set('horizon', horizon);
+    if (location) {
+      params = params.set('location', location);
+    }
+    return this.http.get<any>(`${this.base}/service-bundle/history`, { params });
+  }
+
   /** Detailed service-bundle information, scope/responsibility and approval status. */
   getServiceBundleDetails(sbId: string, horizon: string): Observable<ServiceBundleDetails> {
     const params = new HttpParams().set('sbId', sbId).set('horizon', horizon);

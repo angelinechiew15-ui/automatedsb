@@ -311,7 +311,6 @@ export class ServiceBundle implements OnInit {
             // eslint-disable-next-line no-console
             console.debug('service-bundle: processed charts', id, processed);
             this.loadingCharts.set(false);
-                this.buildHorizonHistory();
           },
           error: () => {
             this.loadingCharts.set(false);
@@ -336,7 +335,6 @@ export class ServiceBundle implements OnInit {
             };
             this.chartCache.update((c) => ({ ...c, [id]: processed }));
             this.loadingCharts.set(false);
-            this.buildHorizonHistory();
           },
           error: () => {
             this.loadingCharts.set(false);
@@ -356,7 +354,6 @@ export class ServiceBundle implements OnInit {
         };
         this.chartCache.update((c) => ({ ...c, [id]: processed }));
         this.loadingCharts.set(false);
-        this.buildHorizonHistory();
       },
       error: () => {
         this.loadingCharts.set(false);
@@ -643,31 +640,49 @@ export class ServiceBundle implements OnInit {
 
   /** Build the history matrices for TS, RTU and Cost across recent horizons. */
   private buildHorizonHistory(): void {
-    // buildRecentHorizons returns newest→oldest; display columns run oldest→newest.
-    const cols = this.buildRecentHorizons();
-    const displayCols = [...cols].reverse();
-    this.recentHorizonCols.set(displayCols);
-    if (!this.selectedSb || !displayCols.length) {
+    if (!this.selectedSb || !this.horizonName()) {
       this.tsHistory.set([]);
       this.rtuHistory.set([]);
       this.costHistory.set([]);
       return;
     }
-    // Fetch aggregated charts in display order so charts[i] maps to displayCols[i].
-    Promise.all(displayCols.map((h) => this.fetchAggregatedChartsForHorizon(h)))
-      .then((charts) => {
-        // Collect all unique FYs across all horizons by inspecting the actual row labels
+
+    // The Build Historical table is rendered only for the All tab, so always
+    // fetch aggregated history data (blank location), independent of the active tab.
+    this.api.getHistory(this.selectedSb, this.horizonName(), '').subscribe({
+      next: (response: any) => {
+        if (!response?.success || !response?.data || response.data.length === 0) {
+          this.tsHistory.set([]);
+          this.rtuHistory.set([]);
+          this.costHistory.set([]);
+          return;
+        }
+
+        // Charts returned in newest→oldest order; reverse to oldest→newest for display
+        const charts = [...response.data].reverse();
+        const recentHorizonCols = charts.map((c) => c.horizon);
+        this.recentHorizonCols.set(recentHorizonCols);
+
+        // Collect all unique FYs across all horizons.
+        // On location tabs, tsRows contains labels; on the All tab, rows are empty
+        // and we must derive FYs from demand series labels instead.
         const allFysSet = new Set<string>();
         for (const chart of charts) {
-          // Extract FY from tsRows labels (e.g., "24/25", "25/26", "26/27")
-          if (chart?.tsRows && chart.tsRows.length) {
+          if (chart?.tsRows?.length) {
             for (const row of chart.tsRows) {
-              // Match FY pattern: "YY/YY"
               const match = row.label.match(/(\d{2}\/\d{2})/);
-              if (match) {
-                allFysSet.add(match[1]);
-              }
+              if (match) allFysSet.add(match[1]);
             }
+          }
+
+          const seriesLabels = [
+            ...(chart?.tsDemand ?? []),
+            ...(chart?.rtuDemand ?? []),
+            ...(chart?.costDemand ?? []),
+          ];
+          for (const p of seriesLabels) {
+            const match = p?.label?.match(/(\d{2}\/\d{2})/);
+            if (match) allFysSet.add(match[1]);
           }
         }
         // Sort FYs ascending, then keep only the two most recent (e.g. 25/26, 26/27).
@@ -683,7 +698,7 @@ export class ServiceBundle implements OnInit {
           const costVals: (number | null)[] = [];
 
           // For each horizon column (in display order: oldest→newest)
-          for (let displayIdx = 0; displayIdx < displayCols.length; displayIdx++) {
+          for (let displayIdx = 0; displayIdx < charts.length; displayIdx++) {
             const chart = charts[displayIdx];
 
             // Calculate TS value for this FY in this horizon. Quarterly ("Q") FYs are
@@ -712,14 +727,15 @@ export class ServiceBundle implements OnInit {
         this.tsHistory.set(tsRows);
         this.rtuHistory.set(rtuRows);
         this.costHistory.set(costRows);
-      })
-      .catch((err) => {
+      },
+      error: (err) => {
         // eslint-disable-next-line no-console
         console.error('buildHorizonHistory error:', err);
         this.tsHistory.set([]);
         this.rtuHistory.set([]);
         this.costHistory.set([]);
-      });
+      },
+    });
   }
 
   /** Template flag: show the detailed breakdown tables (location tabs only). */
