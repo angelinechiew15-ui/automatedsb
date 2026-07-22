@@ -355,7 +355,13 @@ export class CostKeyOverview implements OnInit {
     const activeFy = fy || horizonFy;
 
     return this.rows()
-      .filter((row) => (!activeFy || row.fy === activeFy) && (!loc || row.loc === loc) && (!sb || row.serviceBundle === sb))
+      .filter(
+        (row) =>
+          this.hasAnyCostDemandAcrossSelectedAndPastHorizons(row) &&
+          (!activeFy || row.fy === activeFy) &&
+          (!loc || row.loc === loc) &&
+          (!sb || row.serviceBundle === sb),
+      )
       .slice()
       .sort((a, b) => {
         const byFy = a.fy.localeCompare(b.fy);
@@ -381,6 +387,21 @@ export class CostKeyOverview implements OnInit {
         return a.wbsElement.localeCompare(b.wbsElement);
       });
   });
+
+  private hasAnyCostDemandAcrossSelectedAndPastHorizons(row: CostKeyOverviewRow): boolean {
+    if (row.costKeur != null && !Number.isNaN(row.costKeur) && row.costKeur > 0) {
+      return true;
+    }
+
+    for (const horizon of this.calculationPastHorizons()) {
+      const value = row.historicalCosts[horizon];
+      if (value != null && !Number.isNaN(value) && value > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   protected readonly demandByGroupAndHorizon = computed(() => {
     const rows = this.filteredRows();
@@ -659,8 +680,9 @@ export class CostKeyOverview implements OnInit {
   }
 
   protected calculatedCost(row: CostKeyOverviewRow): number | null {
-    const value = this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(this.selectedHorizon());
-    return value == null || Number.isNaN(value) ? null : value;
+    return this.normalizedCalculatedCost(
+      this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(this.selectedHorizon()),
+    );
   }
 
   protected costDemandForHorizon(row: CostKeyOverviewRow, horizon: string): number | null {
@@ -669,8 +691,9 @@ export class CostKeyOverview implements OnInit {
   }
 
   protected calculatedCostForHorizon(row: CostKeyOverviewRow, horizon: string): number | null {
-    const value = this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(horizon);
-    return value == null || Number.isNaN(value) ? null : value;
+    return this.normalizedCalculatedCost(
+      this.calculatedCostByGroupAndHorizon().get(this.groupKey(row))?.get(horizon),
+    );
   }
 
   protected costKeyForRow(row: CostKeyOverviewRow): number | null {
@@ -749,7 +772,7 @@ export class CostKeyOverview implements OnInit {
       foundAny = true;
     }
 
-    return foundAny ? sum : null;
+    return foundAny ? sum : 0;
   }
 
   private calculateCostForHorizon(horizon: string, demandByHorizon: Map<string, number | null>): number | null {
@@ -769,43 +792,42 @@ export class CostKeyOverview implements OnInit {
     }
 
     const prev1 = this.previousHorizon(horizon, 1);
-    const demandPrev1 = prev1 ? demandByHorizon.get(prev1) : null;
+    const demandPrev1 = prev1 ? this.zeroIfNull(demandByHorizon.get(prev1)) : 0;
 
     if (parsed.period === 12) {
       // xx-12 = [(Dxx12*12) - (Dprev1*3)] / 9
-      if (demandPrev1 == null || Number.isNaN(demandPrev1)) {
-        return null;
-      }
       return ((demandCurrent * 12) - (demandPrev1 * 3)) / 9;
     }
 
     const prev2 = this.previousHorizon(horizon, 2);
-    const demandPrev2 = prev2 ? demandByHorizon.get(prev2) : null;
+    const demandPrev2 = prev2 ? this.zeroIfNull(demandByHorizon.get(prev2)) : 0;
 
     if (parsed.period === 3) {
       // xx-03 = [(Dxx03*12) - (Dprev1*3) - (Dprev2*3)] / 6
-      if (demandPrev1 == null || Number.isNaN(demandPrev1) || demandPrev2 == null || Number.isNaN(demandPrev2)) {
-        return null;
-      }
       return ((demandCurrent * 12) - (demandPrev1 * 3) - (demandPrev2 * 3)) / 6;
     }
 
     const prev3 = this.previousHorizon(horizon, 3);
-    const demandPrev3 = prev3 ? demandByHorizon.get(prev3) : null;
+    const demandPrev3 = prev3 ? this.zeroIfNull(demandByHorizon.get(prev3)) : 0;
 
     if (parsed.period === 6) {
       // xx-06 = [(Dxx06*12) - (Dprev1*3) - (Dprev2*3) - (Dprev3*3)] / 3
-      if (
-        demandPrev1 == null || Number.isNaN(demandPrev1) ||
-        demandPrev2 == null || Number.isNaN(demandPrev2) ||
-        demandPrev3 == null || Number.isNaN(demandPrev3)
-      ) {
-        return null;
-      }
       return ((demandCurrent * 12) - (demandPrev1 * 3) - (demandPrev2 * 3) - (demandPrev3 * 3)) / 3;
     }
 
     return null;
+  }
+
+  private normalizedCalculatedCost(value: number | null | undefined): number | null {
+    if (value == null || Number.isNaN(value)) {
+      return null;
+    }
+
+    return Math.max(0, value);
+  }
+
+  private zeroIfNull(value: number | null | undefined): number {
+    return value == null || Number.isNaN(value) ? 0 : value;
   }
 
   private previousHorizon(horizon: string, steps: number): string | null {
